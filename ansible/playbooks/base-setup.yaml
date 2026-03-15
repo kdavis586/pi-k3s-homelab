@@ -147,20 +147,60 @@
       changed_when: false
       when: usb_dev.stat.exists
 
-    - name: Mount USB drive by UUID in fstab (persistent across reboots)
+    - name: Mount USB drive by UUID in fstab (exFAT — uid/gid set at mount time)
       ansible.posix.mount:
         path: "{{ usb_mount }}"
         src: "UUID={{ usb_uuid.stdout }}"
         fstype: "{{ usb_fstype }}"
-        opts: defaults,nofail
+        opts: defaults,nofail,uid=0,gid=0,umask=000
         state: mounted
       when: usb_dev.stat.exists and usb_uuid.stdout != ""
 
-    - name: Set permissions on USB mount
+    - name: Create media directory for Samba share
       ansible.builtin.file:
-        path: "{{ usb_mount }}"
+        path: "{{ usb_mount }}/media"
         state: directory
-        mode: "0755"
-        owner: root
-        group: root
-      when: usb_dev.stat.exists
+        mode: "0777"
+
+    - name: Install Samba
+      ansible.builtin.apt:
+        name: samba
+        state: present
+
+    - name: Configure Samba share for media
+      ansible.builtin.copy:
+        dest: /etc/samba/smb.conf
+        mode: "0644"
+        content: |
+          [global]
+          workgroup = WORKGROUP
+          server string = apple-pi media server
+          security = user
+          dns proxy = no
+
+          [media]
+          path = {{ usb_mount }}/media
+          browseable = yes
+          writable = yes
+          guest ok = no
+          valid users = {{ smb_user }}
+          create mask = 0777
+          directory mask = 0777
+      notify: Restart Samba
+
+    - name: Set Samba password for {{ smb_user }}
+      ansible.builtin.shell: >
+        (echo "{{ smb_password }}"; echo "{{ smb_password }}") | smbpasswd -a -s {{ smb_user }}
+      changed_when: false
+
+    - name: Enable and start Samba
+      ansible.builtin.systemd:
+        name: smbd
+        enabled: true
+        state: started
+
+  handlers:
+    - name: Restart Samba
+      ansible.builtin.systemd:
+        name: smbd
+        state: restarted

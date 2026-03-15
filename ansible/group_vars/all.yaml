@@ -33,3 +33,7 @@ storage_node: apple-pi
 usb_device: /dev/sda1
 usb_fstype: exfat
 usb_mount: /mnt/usb-storage
+
+# ── Samba ─────────────────────────────────────────────────────────────────────
+smb_user: ubuntu
+smb_password: "changeme"
