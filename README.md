@@ -14,6 +14,28 @@ A git-driven Kubernetes homelab running on Raspberry Pi 4s. Cluster provisioning
 - TP-Link TL-SG605P 5-port PoE+ switch (ports 1–3 → Pis, port 5 → ATT router ETH1)
 - ATT BGW320-500 router (192.168.1.254) — **use ETH1/3/4 for switch uplink, not ETH2**
 
+## Network Topology
+
+```mermaid
+graph TD
+    internet((Internet))
+    mac[Mac\nWiFi]
+    att[ATT BGW320-500\n192.168.1.254\nFiber gateway]
+    switch[TP-Link TL-SG605P\n5-port PoE+ switch]
+    bakery[the-bakery\n192.168.1.100\nK3s control plane\n4GB RAM · 32GB SD]
+    apple[apple-pi\n192.168.1.101\nK3s agent · Jellyfin\n8GB RAM · 64GB SD]
+    pumpkin[pumpkin-pi\n192.168.1.102\nK3s agent\n8GB RAM · 64GB SD]
+    usb[(128GB USB-C\n/mnt/usb-storage)]
+
+    internet --> att
+    mac -->|WiFi| att
+    att -->|ETH1| switch
+    switch -->|PoE port 1| bakery
+    switch -->|PoE port 2| apple
+    switch -->|PoE port 3| pumpkin
+    apple -.-|attached| usb
+```
+
 ## Stack
 
 - **OS**: Ubuntu Server 24.04 LTS (arm64), configured entirely via cloud-init
