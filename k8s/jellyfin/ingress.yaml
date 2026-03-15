@@ -1,11 +1,7 @@
 ---
 # Traefik IngressRoute to expose Jellyfin at http://jellyfin.local
-# Traefik v3 ships with K3s and handles this automatically.
-#
-# After applying, add this to /etc/hosts on your Mac:
-#   192.168.1.100  jellyfin.local
-#
-# Then access: http://jellyfin.local
+# On Mac/iPhone this resolves automatically via mDNS (avahi broadcasts it).
+# No /etc/hosts or app needed on Apple devices.
 apiVersion: traefik.io/v1alpha1
 kind: IngressRoute
 metadata:

@@ -11,7 +11,7 @@ spec:
   storageClassName: local-path
   resources:
     requests:
-      storage: 900Gi  # Most of the 1TB USB drive
+      storage: 100Gi  # ~106G free on 128GB USB flash drive (8.9G pre-existing files)
 ---
 # PVC for Jellyfin config/metadata (smaller, also on USB drive)
 apiVersion: v1
@@ -25,4 +25,4 @@ spec:
   storageClassName: local-path
   resources:
     requests:
-      storage: 10Gi
+      storage: 5Gi

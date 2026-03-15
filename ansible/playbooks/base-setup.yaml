@@ -36,7 +36,15 @@
           - chrony
           - open-iscsi
           - nfs-common
+          - avahi-daemon
+          - avahi-utils
         state: present
+
+    - name: Enable and start avahi-daemon (mDNS for .local resolution)
+      ansible.builtin.systemd:
+        name: avahi-daemon
+        enabled: true
+        state: started
 
     - name: Enable and start chrony (NTP)
       ansible.builtin.systemd:
@@ -79,6 +87,35 @@
         - { key: net.bridge.bridge-nf-call-iptables, value: "1" }
         - { key: net.bridge.bridge-nf-call-ip6tables, value: "1" }
         - { key: net.ipv4.ip_forward, value: "1" }
+
+- name: Publish jellyfin.local mDNS alias on server node
+  hosts: servers
+  become: true
+  tasks:
+    - name: Create avahi alias systemd service for jellyfin.local
+      ansible.builtin.copy:
+        dest: /etc/systemd/system/avahi-alias-jellyfin.service
+        mode: "0644"
+        content: |
+          [Unit]
+          Description=mDNS alias jellyfin.local -> {{ server_ip }}
+          After=avahi-daemon.service
+          Requires=avahi-daemon.service
+
+          [Service]
+          Type=simple
+          ExecStart=/usr/bin/avahi-publish --address -R jellyfin.local {{ server_ip }}
+          Restart=on-failure
+
+          [Install]
+          WantedBy=multi-user.target
+
+    - name: Enable and start jellyfin.local mDNS alias
+      ansible.builtin.systemd:
+        name: avahi-alias-jellyfin
+        enabled: true
+        state: started
+        daemon_reload: true
 
 - name: Mount USB drive on storage node
   hosts: apple-pi
