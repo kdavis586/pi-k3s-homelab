@@ -1,0 +1,60 @@
+---
+# Render all templated configs from ansible/group_vars/all.yaml.
+# Usage: make generate
+#
+# Regenerate whenever you change group_vars/all.yaml (hostnames, IPs, etc.)
+
+- name: Generate all configs from templates
+  hosts: localhost
+  connection: local
+  gather_facts: false
+
+  tasks:
+    # ── cloud-init: server ──────────────────────────────────────────────────
+    - name: Generate user-data for {{ server_hostname }}
+      ansible.builtin.template:
+        src: "{{ playbook_dir }}/../../cloud-init/templates/user-data.j2"
+        dest: "{{ playbook_dir }}/../../cloud-init/user-data-server.yaml"
+      vars:
+        node_hostname: "{{ server_hostname }}"
+        node_role: server
+
+    - name: Generate network-config for {{ server_hostname }}
+      ansible.builtin.template:
+        src: "{{ playbook_dir }}/../../cloud-init/templates/network-config.j2"
+        dest: "{{ playbook_dir }}/../../cloud-init/network-config-server.yaml"
+      vars:
+        node_ip: "{{ server_ip }}"
+
+    # ── cloud-init: agents ──────────────────────────────────────────────────
+    - name: Generate user-data for agent nodes
+      ansible.builtin.template:
+        src: "{{ playbook_dir }}/../../cloud-init/templates/user-data.j2"
+        dest: "{{ playbook_dir }}/../../cloud-init/user-data-agent-{{ idx + 1 }}.yaml"
+      vars:
+        node_hostname: "{{ item.hostname }}"
+        node_role: agent
+      loop: "{{ agent_nodes }}"
+      loop_control:
+        index_var: idx
+
+    - name: Generate network-config for agent nodes
+      ansible.builtin.template:
+        src: "{{ playbook_dir }}/../../cloud-init/templates/network-config.j2"
+        dest: "{{ playbook_dir }}/../../cloud-init/network-config-agent-{{ idx + 1 }}.yaml"
+      vars:
+        node_ip: "{{ item.ip }}"
+      loop: "{{ agent_nodes }}"
+      loop_control:
+        index_var: idx
+
+    # ── k8s manifests ───────────────────────────────────────────────────────
+    - name: Generate Jellyfin deployment
+      ansible.builtin.template:
+        src: "{{ playbook_dir }}/../../k8s/templates/jellyfin-deployment.j2"
+        dest: "{{ playbook_dir }}/../../k8s/jellyfin/deployment.yaml"
+
+    - name: Generate local-path-config
+      ansible.builtin.template:
+        src: "{{ playbook_dir }}/../../k8s/templates/local-path-config.j2"
+        dest: "{{ playbook_dir }}/../../k8s/storage/local-path-config.yaml"

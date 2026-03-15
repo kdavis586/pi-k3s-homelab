@@ -1,0 +1,25 @@
+---
+# ─────────────────────────────────────────────────────────────────────────────
+# Single source of truth for all node configuration.
+# After editing, run:  make generate
+# ─────────────────────────────────────────────────────────────────────────────
+
+# GitHub username — SSH public keys are imported from github.com/<github_user>.keys
+github_user: kdavis586
+
+# ── Network ──────────────────────────────────────────────────────────────────
+gateway_ip: "192.168.1.254"
+dns_servers:
+  - "192.168.1.254"
+  - "8.8.8.8"
+
+# ── Server node ──────────────────────────────────────────────────────────────
+server_hostname: TheBakery
+server_ip: "192.168.1.100"
+
+# ── Agent nodes ──────────────────────────────────────────────────────────────
+agent_nodes:
+  - hostname: ApplePi
+    ip: "192.168.1.101"
+  - hostname: PumpkinPi
+    ip: "192.168.1.102"

@@ -1,11 +1,16 @@
-ANSIBLE := ansible-playbook -i ansible/inventory.yaml
+ANSIBLE := $(shell command -v ansible-playbook 2>/dev/null || echo ~/.local/bin/ansible-playbook) -i ansible/inventory.yaml
 KUBECONFIG := $(HOME)/.kube/config-pi-k3s
 KUBECTL := kubectl --kubeconfig $(KUBECONFIG)
 
-.PHONY: help setup install-k3s deploy status logs ssh-server ssh-agent-1 ssh-agent-2
+.PHONY: help generate setup install-k3s deploy status logs ssh-server ssh-agent-1 ssh-agent-2
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-20s\033[0m %s\n", $$1, $$2}'
+
+# ── Config generation ────────────────────────────────────────────────────────
+
+generate: ## Regenerate cloud-init + k8s configs from ansible/group_vars/all.yaml
+	$(ANSIBLE) ansible/playbooks/generate-configs.yaml
 
 # ── Provisioning ────────────────────────────────────────────────────────────
 
