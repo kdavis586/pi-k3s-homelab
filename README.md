@@ -1,4 +1,4 @@
-# pi-k8s
+# pi-k3s-homelab
 
 A git-driven Kubernetes homelab running on Raspberry Pi 4s. Cluster provisioning is fully reproducible via cloud-init (first boot) and Ansible (ongoing config). Everything is templated from a single source of truth.
 
