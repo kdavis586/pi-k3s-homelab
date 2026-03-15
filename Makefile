@@ -1,8 +1,10 @@
+-include .make-vars
+
 ANSIBLE := $(shell command -v ansible-playbook 2>/dev/null || echo ~/.local/bin/ansible-playbook) -i ansible/inventory.yaml
 KUBECONFIG := $(HOME)/.kube/config-pi-k3s
 KUBECTL := kubectl --kubeconfig $(KUBECONFIG)
 
-.PHONY: help generate setup install-k3s deploy status logs ssh-server ssh-agent-1 ssh-agent-2
+.PHONY: help generate setup install-k3s deploy status logs
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-20s\033[0m %s\n", $$1, $$2}'
@@ -33,11 +35,5 @@ status: ## Show node and pod status
 logs: ## Tail Jellyfin logs
 	$(KUBECTL) logs -n jellyfin -l app=jellyfin -f
 
-ssh-server: ## SSH into TheBakery (server)
-	ssh ubuntu@192.168.1.100
-
-ssh-agent-1: ## SSH into ApplePi (agent 1)
-	ssh ubuntu@192.168.1.101
-
-ssh-agent-2: ## SSH into PumpkinPi (agent 2)
-	ssh ubuntu@192.168.1.102
+ssh-%: ## SSH into any node by name  e.g. make ssh-the-bakery
+	ssh ubuntu@$(shell ansible-inventory -i ansible/inventory.yaml --host $* | python3 -c "import sys,json; print(json.load(sys.stdin)['ansible_host'])")

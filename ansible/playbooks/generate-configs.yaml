@@ -14,7 +14,7 @@
     - name: Generate user-data for {{ server_hostname }}
       ansible.builtin.template:
         src: "{{ playbook_dir }}/../../cloud-init/templates/user-data.j2"
-        dest: "{{ playbook_dir }}/../../cloud-init/user-data-server.yaml"
+        dest: "{{ playbook_dir }}/../../cloud-init/user-data-{{ server_hostname }}.yaml"
       vars:
         node_hostname: "{{ server_hostname }}"
         node_role: server
@@ -22,31 +22,54 @@
     - name: Generate network-config for {{ server_hostname }}
       ansible.builtin.template:
         src: "{{ playbook_dir }}/../../cloud-init/templates/network-config.j2"
-        dest: "{{ playbook_dir }}/../../cloud-init/network-config-server.yaml"
+        dest: "{{ playbook_dir }}/../../cloud-init/network-config-{{ server_hostname }}.yaml"
       vars:
         node_ip: "{{ server_ip }}"
+
+    - name: Generate meta-data for {{ server_hostname }}
+      ansible.builtin.template:
+        src: "{{ playbook_dir }}/../../cloud-init/templates/meta-data.j2"
+        dest: "{{ playbook_dir }}/../../cloud-init/meta-data-{{ server_hostname }}.yaml"
+      vars:
+        node_hostname: "{{ server_hostname }}"
 
     # ── cloud-init: agents ──────────────────────────────────────────────────
     - name: Generate user-data for agent nodes
       ansible.builtin.template:
         src: "{{ playbook_dir }}/../../cloud-init/templates/user-data.j2"
-        dest: "{{ playbook_dir }}/../../cloud-init/user-data-agent-{{ idx + 1 }}.yaml"
+        dest: "{{ playbook_dir }}/../../cloud-init/user-data-{{ item.hostname }}.yaml"
       vars:
         node_hostname: "{{ item.hostname }}"
         node_role: agent
       loop: "{{ agent_nodes }}"
-      loop_control:
-        index_var: idx
 
     - name: Generate network-config for agent nodes
       ansible.builtin.template:
         src: "{{ playbook_dir }}/../../cloud-init/templates/network-config.j2"
-        dest: "{{ playbook_dir }}/../../cloud-init/network-config-agent-{{ idx + 1 }}.yaml"
+        dest: "{{ playbook_dir }}/../../cloud-init/network-config-{{ item.hostname }}.yaml"
       vars:
         node_ip: "{{ item.ip }}"
       loop: "{{ agent_nodes }}"
-      loop_control:
-        index_var: idx
+
+    - name: Generate meta-data for agent nodes
+      ansible.builtin.template:
+        src: "{{ playbook_dir }}/../../cloud-init/templates/meta-data.j2"
+        dest: "{{ playbook_dir }}/../../cloud-init/meta-data-{{ item.hostname }}.yaml"
+      vars:
+        node_hostname: "{{ item.hostname }}"
+      loop: "{{ agent_nodes }}"
+
+    # ── Ansible inventory ───────────────────────────────────────────────────
+    - name: Generate ansible/inventory.yaml
+      ansible.builtin.template:
+        src: "{{ playbook_dir }}/../inventory.j2"
+        dest: "{{ playbook_dir }}/../inventory.yaml"
+
+    # ── Makefile vars ───────────────────────────────────────────────────────
+    - name: Generate .make-vars
+      ansible.builtin.template:
+        src: "{{ playbook_dir }}/../../make-vars.j2"
+        dest: "{{ playbook_dir }}/../../.make-vars"
 
     # ── k8s manifests ───────────────────────────────────────────────────────
     - name: Generate Jellyfin deployment

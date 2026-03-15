@@ -7,6 +7,9 @@
 # GitHub username — SSH public keys are imported from github.com/<github_user>.keys
 github_user: kdavis586
 
+# Increment this to force cloud-init to re-run on next boot (change instance-id)
+cloud_init_version: 4
+
 # ── Network ──────────────────────────────────────────────────────────────────
 gateway_ip: "192.168.1.254"
 dns_servers:
@@ -14,12 +17,12 @@ dns_servers:
   - "8.8.8.8"
 
 # ── Server node ──────────────────────────────────────────────────────────────
-server_hostname: TheBakery
+server_hostname: the-bakery
 server_ip: "192.168.1.100"
 
 # ── Agent nodes ──────────────────────────────────────────────────────────────
 agent_nodes:
-  - hostname: ApplePi
+  - hostname: apple-pi
     ip: "192.168.1.101"
-  - hostname: PumpkinPi
+  - hostname: pumpkin-pi
     ip: "192.168.1.102"

@@ -16,6 +16,9 @@ ansible/inventory.local.yaml
 *.local.yaml
 *.local.yml
 
+# Generated Makefile vars (derived from group_vars/all.yaml)
+.make-vars
+
 # Kubeconfig (written to ~/.kube/, but just in case)
 kubeconfig
 *.kubeconfig
