@@ -1,0 +1,43 @@
+---
+# Reconfigure K3s's built-in local-path-provisioner to store data on the
+# USB drive (/mnt/usb-storage) instead of the default /opt/local-path-provisioner.
+#
+# K3s ships with local-path-provisioner in the kube-system namespace.
+# This ConfigMap overrides its storage path.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: local-path-config
+  namespace: kube-system
+data:
+  config.json: |-
+    {
+      "nodePathMap": [
+        {
+          "node": "DEFAULT_PATH_FOR_NON_LISTED_NODES",
+          "paths": ["/opt/local-path-provisioner"]
+        },
+        {
+          "node": "pi-server",
+          "paths": ["/mnt/usb-storage/k8s-volumes"]
+        }
+      ]
+    }
+  setup: |-
+    #!/bin/sh
+    set -eu
+    mkdir -m 0777 -p "$VOL_DIR"
+  teardown: |-
+    #!/bin/sh
+    set -eu
+    rm -rf "$VOL_DIR"
+  helperPod.yaml: |-
+    apiVersion: v1
+    kind: Pod
+    metadata:
+      name: helper-pod
+    spec:
+      containers:
+      - name: helper-pod
+        image: busybox
+        imagePullPolicy: IfNotPresent

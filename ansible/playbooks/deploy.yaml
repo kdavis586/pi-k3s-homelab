@@ -1,0 +1,47 @@
+---
+# Deploy all K8s manifests to the cluster.
+# Run from your workstation after editing manifests and committing to git.
+# Usage: ansible-playbook ansible/playbooks/deploy.yaml
+#    or: make deploy  (from repo root)
+- name: Deploy K8s manifests to cluster
+  hosts: servers
+  become: false
+  vars:
+    # Path to manifests on your local workstation (relative to repo root)
+    local_manifests_dir: "{{ playbook_dir }}/../../k8s"
+    # kubeconfig to use (written by k3s-install.yaml)
+    kubeconfig: "{{ lookup('env', 'HOME') }}/.kube/config-pi-k3s"
+  tasks:
+    - name: Apply all manifests in k8s/ directory
+      ansible.builtin.command: >
+        kubectl apply -R -f {{ local_manifests_dir }}
+        --kubeconfig {{ kubeconfig }}
+      delegate_to: localhost
+      changed_when: true
+      register: apply_output
+
+    - name: Show apply output
+      ansible.builtin.debug:
+        msg: "{{ apply_output.stdout_lines }}"
+
+    - name: Wait for Jellyfin deployment to be ready
+      ansible.builtin.command: >
+        kubectl rollout status deployment/jellyfin -n jellyfin
+        --kubeconfig {{ kubeconfig }}
+        --timeout=120s
+      delegate_to: localhost
+      changed_when: false
+      register: rollout_status
+      ignore_errors: true  # Don't fail the whole playbook if Jellyfin isn't deployed yet
+
+    - name: Show pod status
+      ansible.builtin.command: >
+        kubectl get pods -A
+        --kubeconfig {{ kubeconfig }}
+      delegate_to: localhost
+      changed_when: false
+      register: pod_status
+
+    - name: Print pod status
+      ansible.builtin.debug:
+        msg: "{{ pod_status.stdout_lines }}"

@@ -1,0 +1,122 @@
+---
+# Install K3s on all nodes.
+# Installs the server on pi-server, then joins agents.
+# Usage: ansible-playbook ansible/playbooks/k3s-install.yaml
+#
+# To uninstall: run /usr/local/bin/k3s-uninstall.sh (server)
+#               or  /usr/local/bin/k3s-agent-uninstall.sh (agents)
+
+- name: Install K3s server
+  hosts: servers
+  become: true
+  vars:
+    k3s_server_ip: "192.168.1.100"
+  tasks:
+    - name: Check if K3s server is already installed
+      ansible.builtin.stat:
+        path: /usr/local/bin/k3s
+      register: k3s_binary
+
+    - name: Install K3s server
+      ansible.builtin.shell: |
+        curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC="server \
+          --write-kubeconfig-mode 644 \
+          --node-ip {{ k3s_server_ip }} \
+          --tls-san {{ k3s_server_ip }}" sh -
+      when: not k3s_binary.stat.exists
+      changed_when: true
+
+    - name: Wait for K3s to be ready
+      ansible.builtin.wait_for:
+        path: /var/lib/rancher/k3s/server/node-token
+        timeout: 120
+
+    - name: Wait for K3s API server to be healthy
+      ansible.builtin.uri:
+        url: "https://{{ k3s_server_ip }}:6443/healthz"
+        validate_certs: false
+        status_code: 200
+      register: k3s_health
+      until: k3s_health.status == 200
+      retries: 30
+      delay: 5
+
+    - name: Read K3s node token
+      ansible.builtin.slurp:
+        src: /var/lib/rancher/k3s/server/node-token
+      register: node_token_b64
+
+    - name: Set node token fact for use by agent playbook
+      ansible.builtin.set_fact:
+        k3s_node_token: "{{ node_token_b64.content | b64decode | trim }}"
+
+    - name: Read kubeconfig from server
+      ansible.builtin.slurp:
+        src: /etc/rancher/k3s/k3s.yaml
+      register: kubeconfig_b64
+
+    - name: Save kubeconfig locally (with correct server IP)
+      ansible.builtin.copy:
+        content: "{{ kubeconfig_b64.content | b64decode | replace('127.0.0.1', k3s_server_ip) }}"
+        dest: "{{ lookup('env', 'HOME') }}/.kube/config-pi-k3s"
+        mode: "0600"
+      delegate_to: localhost
+      become: false
+
+    - name: Print kubeconfig merge instructions
+      ansible.builtin.debug:
+        msg: |
+          Kubeconfig saved to ~/.kube/config-pi-k3s
+          To use: export KUBECONFIG=~/.kube/config-pi-k3s
+          Or merge with existing: KUBECONFIG=~/.kube/config:~/.kube/config-pi-k3s kubectl config view --merge --flatten > ~/.kube/config
+
+- name: Install K3s agents
+  hosts: agents
+  become: true
+  vars:
+    k3s_server_ip: "192.168.1.100"
+  tasks:
+    - name: Fetch node token from server
+      ansible.builtin.slurp:
+        src: /var/lib/rancher/k3s/server/node-token
+      register: node_token_b64
+      delegate_to: pi-server
+
+    - name: Set node token fact
+      ansible.builtin.set_fact:
+        k3s_node_token: "{{ node_token_b64.content | b64decode | trim }}"
+
+    - name: Check if K3s agent is already installed
+      ansible.builtin.stat:
+        path: /usr/local/bin/k3s
+      register: k3s_binary
+
+    - name: Install K3s agent
+      ansible.builtin.shell: |
+        curl -sfL https://get.k3s.io | \
+          K3S_URL=https://{{ k3s_server_ip }}:6443 \
+          K3S_TOKEN={{ k3s_node_token }} \
+          INSTALL_K3S_EXEC="agent --node-ip {{ ansible_host }}" sh -
+      when: not k3s_binary.stat.exists
+      changed_when: true
+
+    - name: Wait for K3s agent to be active
+      ansible.builtin.systemd:
+        name: k3s-agent
+      register: k3s_agent_status
+      until: k3s_agent_status.status.ActiveState == "active"
+      retries: 20
+      delay: 5
+
+- name: Verify cluster
+  hosts: servers
+  become: false
+  tasks:
+    - name: Check all nodes are Ready
+      ansible.builtin.command: kubectl get nodes
+      register: nodes_output
+      changed_when: false
+
+    - name: Print cluster nodes
+      ansible.builtin.debug:
+        msg: "{{ nodes_output.stdout_lines }}"

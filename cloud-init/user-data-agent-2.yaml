@@ -1,0 +1,46 @@
+#cloud-config
+# pi-agent-2 (4GB Pi 4) - K3s agent node
+
+hostname: pi-agent-2
+manage_etc_hosts: true
+
+users:
+  - name: ubuntu
+    groups: [sudo]
+    shell: /bin/bash
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    lock_passwd: true
+    ssh_authorized_keys:
+      - YOUR_SSH_PUBLIC_KEY_HERE  # Replace with contents of ~/.ssh/id_ed25519.pub (or id_rsa.pub)
+
+ssh_pwauth: false
+
+locale: en_US.UTF-8
+timezone: America/Chicago  # Adjust to your timezone
+
+package_update: true
+package_upgrade: true
+
+packages:
+  - curl
+  - wget
+  - git
+  - htop
+  - chrony
+  - open-iscsi
+  - nfs-common
+
+runcmd:
+  - systemctl enable chrony
+  - systemctl start chrony
+  - ufw disable
+  - modprobe br_netfilter
+  - modprobe overlay
+  - echo "br_netfilter" >> /etc/modules-load.d/k3s.conf
+  - echo "overlay" >> /etc/modules-load.d/k3s.conf
+  - echo "net.bridge.bridge-nf-call-iptables=1" >> /etc/sysctl.d/k3s.conf
+  - echo "net.bridge.bridge-nf-call-ip6tables=1" >> /etc/sysctl.d/k3s.conf
+  - echo "net.ipv4.ip_forward=1" >> /etc/sysctl.d/k3s.conf
+  - sysctl --system
+
+final_message: "pi-agent-2 cloud-init complete after $UPTIME seconds"

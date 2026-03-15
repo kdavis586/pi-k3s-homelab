@@ -1,0 +1,21 @@
+# Claude Code local settings
+.claude/
+
+# Editor
+.DS_Store
+*.swp
+*.swo
+.idea/
+.vscode/
+
+# Ansible retry files
+*.retry
+
+# Any local overrides (use these if you want to keep personal values out of the repo)
+ansible/inventory.local.yaml
+*.local.yaml
+*.local.yml
+
+# Kubeconfig (written to ~/.kube/, but just in case)
+kubeconfig
+*.kubeconfig

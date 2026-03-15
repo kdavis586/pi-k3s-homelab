@@ -1,0 +1,121 @@
+---
+# Base system setup for all Pi nodes.
+# Run once after cloud-init completes (first boot).
+# Usage: ansible-playbook ansible/playbooks/base-setup.yaml
+- name: Base setup for all nodes
+  hosts: all
+  become: true
+  tasks:
+    - name: Wait for system to be reachable
+      ansible.builtin.wait_for_connection:
+        timeout: 120
+
+    - name: Update apt cache and upgrade packages
+      ansible.builtin.apt:
+        update_cache: true
+        upgrade: dist
+        cache_valid_time: 3600
+
+    - name: Ensure required packages are installed
+      ansible.builtin.apt:
+        name:
+          - curl
+          - wget
+          - git
+          - htop
+          - chrony
+          - open-iscsi
+          - nfs-common
+          - linux-modules-extra-raspi  # Needed for some K3s networking on Ubuntu on Pi
+        state: present
+
+    - name: Enable and start chrony (NTP)
+      ansible.builtin.systemd:
+        name: chrony
+        enabled: true
+        state: started
+
+    - name: Disable ufw (K3s needs open inter-node ports)
+      ansible.builtin.systemd:
+        name: ufw
+        enabled: false
+        state: stopped
+      ignore_errors: true  # ufw may not be running
+
+    - name: Load br_netfilter kernel module
+      community.general.modprobe:
+        name: br_netfilter
+        state: present
+
+    - name: Load overlay kernel module
+      community.general.modprobe:
+        name: overlay
+        state: present
+
+    - name: Persist kernel modules for K3s across reboots
+      ansible.builtin.copy:
+        dest: /etc/modules-load.d/k3s.conf
+        content: |
+          br_netfilter
+          overlay
+        mode: "0644"
+
+    - name: Set sysctl params required by K3s
+      ansible.posix.sysctl:
+        name: "{{ item.key }}"
+        value: "{{ item.value }}"
+        sysctl_file: /etc/sysctl.d/k3s.conf
+        reload: true
+      loop:
+        - { key: net.bridge.bridge-nf-call-iptables, value: "1" }
+        - { key: net.bridge.bridge-nf-call-ip6tables, value: "1" }
+        - { key: net.ipv4.ip_forward, value: "1" }
+
+- name: Mount USB drive on server node
+  hosts: servers
+  become: true
+  tasks:
+    - name: Create USB mount point
+      ansible.builtin.file:
+        path: /mnt/usb-storage
+        state: directory
+        mode: "0755"
+        owner: root
+        group: root
+
+    - name: Check if USB drive is present
+      ansible.builtin.stat:
+        path: /dev/sda1
+      register: usb_dev
+
+    - name: Display reminder if USB drive not detected
+      ansible.builtin.debug:
+        msg: >
+          USB drive not detected at /dev/sda1. Plug in the drive and re-run
+          this playbook, or manually determine the device path with 'lsblk'
+          and update the fstab task below.
+      when: not usb_dev.stat.exists
+
+    - name: Get UUID of USB drive partition
+      ansible.builtin.command: blkid -s UUID -o value /dev/sda1
+      register: usb_uuid
+      changed_when: false
+      when: usb_dev.stat.exists
+
+    - name: Mount USB drive by UUID in fstab (persistent across reboots)
+      ansible.posix.mount:
+        path: /mnt/usb-storage
+        src: "UUID={{ usb_uuid.stdout }}"
+        fstype: ext4  # Change to ntfs-3g/exfat if drive is formatted differently
+        opts: defaults,nofail
+        state: mounted
+      when: usb_dev.stat.exists and usb_uuid.stdout != ""
+
+    - name: Set permissions on USB mount
+      ansible.builtin.file:
+        path: /mnt/usb-storage
+        state: directory
+        mode: "0755"
+        owner: root
+        group: root
+      when: usb_dev.stat.exists
