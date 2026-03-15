@@ -11,10 +11,8 @@
         timeout: 120
 
     - name: Wait for cloud-init to complete
-      ansible.builtin.command: cloud-init status --wait
+      ansible.builtin.shell: timeout 300 cloud-init status --wait || true
       changed_when: false
-      failed_when: false
-      timeout: 600
 
     - name: Repair any interrupted dpkg transactions
       ansible.builtin.command: dpkg --configure -a
@@ -176,22 +174,18 @@
           workgroup = WORKGROUP
           server string = apple-pi media server
           security = user
+          map to guest = bad user
           dns proxy = no
 
           [media]
           path = {{ usb_mount }}/media
           browseable = yes
           writable = yes
-          guest ok = no
-          valid users = {{ smb_user }}
+          guest ok = yes
+          force user = nobody
           create mask = 0777
           directory mask = 0777
       notify: Restart Samba
-
-    - name: Set Samba password for {{ smb_user }}
-      ansible.builtin.shell: >
-        (echo "{{ smb_password }}"; echo "{{ smb_password }}") | smbpasswd -a -s {{ smb_user }}
-      changed_when: false
 
     - name: Enable and start Samba
       ansible.builtin.systemd:
