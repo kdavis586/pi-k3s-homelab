@@ -10,6 +10,11 @@
       ansible.builtin.wait_for_connection:
         timeout: 120
 
+    - name: Wait for cloud-init to complete
+      ansible.builtin.command: cloud-init status --wait
+      changed_when: false
+      timeout: 600
+
     - name: Update apt cache and upgrade packages
       ansible.builtin.apt:
         update_cache: true
