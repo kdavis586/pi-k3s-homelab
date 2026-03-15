@@ -11,7 +11,7 @@ spec:
   entryPoints:
     - web
   routes:
-    - match: Host(`jellyfin.local`)
+    - match: Host(`jellyfin.local`) || Host(`192.168.1.100`) || Host(`192.168.1.101`) || Host(`192.168.1.102`)
       kind: Rule
       services:
         - name: jellyfin

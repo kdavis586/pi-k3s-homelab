@@ -12,12 +12,15 @@ After any change to that file: `make generate` to propagate to all configs.
 
 ```bash
 make generate     # Render all Jinja2 templates → cloud-init files, inventory, k8s manifests
-make setup        # Ansible: base OS setup + USB mount + Samba (idempotent)
+make setup        # Ansible: base OS setup + USB mount + avahi (idempotent)
 make install-k3s  # Ansible: install K3s server then agents (idempotent)
 make deploy       # kubectl apply all k8s manifests
 make status       # kubectl get nodes + pods
 make ssh-<name>   # e.g. make ssh-the-bakery, make ssh-apple-pi
 ```
+
+`make setup` can appear to hang in the terminal even after completing — this is a known quirk.
+The `cloud-init status --wait` step uses `timeout 300 ... || true` to avoid blocking indefinitely.
 
 ---
 
@@ -40,6 +43,14 @@ cloud-init only runs once per `instance-id`. To force a re-run after SD card cha
 2. Run `make generate` — this updates the `meta-data` files with a new `instance-id`
 3. Copy the new `network-config`, `user-data`, and `meta-data` files to the `system-boot` partition
 
+SD card copy commands (run from repo root, one card at a time):
+```bash
+cp cloud-init/network-config-<node>.yaml /Volumes/system-boot/network-config && \
+cp cloud-init/meta-data-<node>.yaml /Volumes/system-boot/meta-data && \
+cp cloud-init/user-data-<node>.yaml /Volumes/system-boot/user-data && \
+diskutil eject /Volumes/system-boot && echo "done"
+```
+
 ### Do not unplug ethernet during boot
 Unplugging ethernet while cloud-init is running `apt-get` corrupts dpkg state.
 The `base-setup.yaml` playbook has a `dpkg --configure -a` repair step to recover from this.
@@ -56,8 +67,9 @@ Original spec said "1x 8GB Pi" but actual hardware is 2x 8GB + 1x 4GB:
 
 128GB USB-C flash drive is attached to **apple-pi** at `/dev/sda1` (exFAT), mounted at `/mnt/usb-storage`.
 Jellyfin is pinned to apple-pi via `nodeSelector: kubernetes.io/hostname: apple-pi`.
-K8s persistent volumes for Jellyfin are provisioned under `/mnt/usb-storage/k8s-volumes`.
-Media files live at `/mnt/usb-storage/media` — also exposed via Samba.
+Config PVC is provisioned under `/mnt/usb-storage/k8s-volumes` via local-path-provisioner.
+Media files live at `/mnt/usb-storage/media` — mounted directly into the Jellyfin container
+via `hostPath` (not a PVC) so files copied there are immediately visible to Jellyfin.
 
 exFAT does not support Unix ownership (`chown`). Permissions are set via mount options:
 `uid=0,gid=0,umask=000` in fstab — do not add `owner`/`group` to Ansible file tasks on this mount.
@@ -70,18 +82,25 @@ usb_fstype: exfat
 usb_mount: /mnt/usb-storage
 ```
 
+### Swapping the USB drive safely
+```bash
+kubectl --kubeconfig ~/.kube/config-pi-k3s scale deployment jellyfin -n jellyfin --replicas=0
+ssh ubuntu@192.168.1.101 "sudo umount /mnt/usb-storage"
+# unplug, copy files, replug
+ssh ubuntu@192.168.1.101 "sudo mount -a"
+kubectl --kubeconfig ~/.kube/config-pi-k3s scale deployment jellyfin -n jellyfin --replicas=1
+```
+
 ---
 
-## Samba (media file access)
+## Media upload
 
-Samba runs on apple-pi, sharing `/mnt/usb-storage/media` as `\\apple-pi\media`.
-
-- **Mac**: Finder → Go → Connect to Server → `smb://apple-pi.local/media`
-- **Windows**: File Explorer → `\\apple-pi\media`
-- User: `ubuntu`, password set via `smb_password` in `group_vars/all.yaml`
-
-**`smb_password` in group_vars/all.yaml is stored in plaintext — acceptable for homelab,
-but do not commit a real password to a public repo.**
+Fastest for bulk: physically swap USB drive (see above).
+For ongoing uploads: `rsync` directly to apple-pi:
+```bash
+rsync -av --progress ~/path/to/media/ ubuntu@192.168.1.101:/mnt/usb-storage/media/
+```
+Samba has been removed — rsync/scp is the preferred transfer method.
 
 ---
 
@@ -90,8 +109,9 @@ but do not commit a real password to a public repo.**
 avahi-daemon runs on all nodes for `.local` hostname resolution.
 A systemd service on the-bakery publishes `jellyfin.local` → `192.168.1.100` via mDNS.
 
-- Apple devices: `http://jellyfin.local` works with zero client configuration
-- Android/Windows: use `http://192.168.1.100` directly
+- Apple devices: `http://jellyfin.local` — works with zero client configuration
+- Android/Windows: `http://192.168.1.100` directly
+- Always use `http://` prefix explicitly — browsers auto-upgrade bare hostnames to HTTPS
 
 ---
 
@@ -111,6 +131,7 @@ A systemd service on the-bakery publishes `jellyfin.local` → `192.168.1.100` v
   The playbook accepts both 200 and 401 as healthy.
 - K3s comes with Traefik ingress and local-path-provisioner out of the box
 - Traefik listens on ports 80/443 on all nodes via DaemonSet
+- `~/.kube` directory must exist before running `make install-k3s` (`mkdir -p ~/.kube`)
 
 ---
 
@@ -121,7 +142,7 @@ A systemd service on the-bakery publishes `jellyfin.local` → `192.168.1.100` v
 | `ansible/group_vars/all.yaml` | Single source of truth — edit this, then `make generate` |
 | `ansible/inventory.yaml` | Generated — do not edit directly |
 | `cloud-init/templates/` | Jinja2 templates for user-data, network-config, meta-data |
-| `ansible/playbooks/base-setup.yaml` | OS prep, USB mount, avahi, Samba |
+| `ansible/playbooks/base-setup.yaml` | OS prep, USB mount, avahi mDNS |
 | `ansible/playbooks/k3s-install.yaml` | K3s install |
 | `ansible/playbooks/generate-configs.yaml` | Template rendering |
 | `k8s/jellyfin/` | Jellyfin manifests |
