@@ -11,7 +11,7 @@ A git-driven Kubernetes homelab running on Raspberry Pi 4s. Cluster provisioning
 | Agent 2 | pumpkin-pi | 192.168.1.102 | K3s agent | 8GB | 64GB SD |
 
 - 3x Raspberry Pi 4 Model B with PoE hats
-- TP-Link TL-SG605P 5-port PoE+ switch (ports 1–3 → Pis, port 5 → ATT router ETH1)
+- TP-Link TL-SG605P 5-port PoE+ switch (ports 1–3 → Pis, port 5 → ATT router ETH1) — **keep the Extend toggle on the back panel OFF** (Extend mode hard-locks ports to 10 Mbps)
 - ATT BGW320-500 router (192.168.1.254) — **use ETH1/3/4 for switch uplink, not ETH2**
 
 ## Network Topology

@@ -26,6 +26,12 @@ The `cloud-init status --wait` step uses `timeout 300 ... || true` to avoid bloc
 
 ## Hardware gotchas discovered during initial setup
 
+### TP-Link TL-SG605P Extend mode
+The switch has a physical toggle on the back panel labeled "Extend". When ON, it hard-locks
+affected ports to **10 Mbps** (trades speed for 250m PoE range). Keep this **OFF** — all
+cables are short and 10 Mbps will cause Jellyfin buffering. Verified all three Pi ports
+negotiate at 1000 Mbps with Extend OFF.
+
 ### ATT BGW320-500 ethernet ports
 **ETH2 is the multi-gig passthrough port — do NOT connect the switch there.**
 It does not serve LAN DHCP and devices behind it are completely invisible on the network.
