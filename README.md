@@ -19,13 +19,13 @@ A git-driven Kubernetes homelab running on Raspberry Pi 4s. Cluster provisioning
 ```mermaid
 graph TD
     internet((Internet))
-    mac[Mac\nWiFi]
-    att[ATT BGW320-500\n192.168.1.254\nFiber gateway]
-    switch[TP-Link TL-SG605P\n5-port PoE+ switch]
-    bakery[the-bakery\n192.168.1.100\nK3s control plane\n4GB RAM · 32GB SD]
-    apple[apple-pi\n192.168.1.101\nK3s agent · Jellyfin\n8GB RAM · 64GB SD]
-    pumpkin[pumpkin-pi\n192.168.1.102\nK3s agent\n8GB RAM · 64GB SD]
-    usb[(128GB USB-C\n/mnt/usb-storage)]
+    mac[Mac<br/>WiFi]
+    att[ATT BGW320-500<br/>192.168.1.254<br/>Fiber gateway]
+    switch[TP-Link TL-SG605P<br/>5-port PoE+ switch]
+    bakery[the-bakery<br/>192.168.1.100<br/>K3s control plane<br/>4GB RAM · 32GB SD]
+    apple[apple-pi<br/>192.168.1.101<br/>K3s agent · Jellyfin<br/>8GB RAM · 64GB SD]
+    pumpkin[pumpkin-pi<br/>192.168.1.102<br/>K3s agent<br/>8GB RAM · 64GB SD]
+    usb[(128GB USB-C<br/>/mnt/usb-storage)]
 
     internet --> att
     mac -->|WiFi| att
