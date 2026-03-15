@@ -20,7 +20,7 @@ data:
           "paths": ["/opt/local-path-provisioner"]
         },
         {
-          "node": "the-bakery",
+          "node": "apple-pi",
           "paths": ["/mnt/usb-storage/k8s-volumes"]
         }
       ]

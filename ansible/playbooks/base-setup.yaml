@@ -13,7 +13,12 @@
     - name: Wait for cloud-init to complete
       ansible.builtin.command: cloud-init status --wait
       changed_when: false
+      failed_when: false
       timeout: 600
+
+    - name: Repair any interrupted dpkg transactions
+      ansible.builtin.command: dpkg --configure -a
+      changed_when: false
 
     - name: Update apt cache and upgrade packages
       ansible.builtin.apt:
@@ -31,7 +36,6 @@
           - chrony
           - open-iscsi
           - nfs-common
-          - linux-modules-extra-raspi  # Needed for some K3s networking on Ubuntu on Pi
         state: present
 
     - name: Enable and start chrony (NTP)
@@ -76,13 +80,13 @@
         - { key: net.bridge.bridge-nf-call-ip6tables, value: "1" }
         - { key: net.ipv4.ip_forward, value: "1" }
 
-- name: Mount USB drive on server node
-  hosts: servers
+- name: Mount USB drive on storage node
+  hosts: apple-pi
   become: true
   tasks:
     - name: Create USB mount point
       ansible.builtin.file:
-        path: /mnt/usb-storage
+        path: "{{ usb_mount }}"
         state: directory
         mode: "0755"
         owner: root
@@ -90,35 +94,34 @@
 
     - name: Check if USB drive is present
       ansible.builtin.stat:
-        path: /dev/sda1
+        path: "{{ usb_device }}"
       register: usb_dev
 
     - name: Display reminder if USB drive not detected
       ansible.builtin.debug:
         msg: >
-          USB drive not detected at /dev/sda1. Plug in the drive and re-run
-          this playbook, or manually determine the device path with 'lsblk'
-          and update the fstab task below.
+          USB drive not detected at {{ usb_device }}. Plug in the drive and re-run
+          this playbook, or check device path with 'lsblk'.
       when: not usb_dev.stat.exists
 
     - name: Get UUID of USB drive partition
-      ansible.builtin.command: blkid -s UUID -o value /dev/sda1
+      ansible.builtin.command: blkid -s UUID -o value {{ usb_device }}
       register: usb_uuid
       changed_when: false
       when: usb_dev.stat.exists
 
     - name: Mount USB drive by UUID in fstab (persistent across reboots)
       ansible.posix.mount:
-        path: /mnt/usb-storage
+        path: "{{ usb_mount }}"
         src: "UUID={{ usb_uuid.stdout }}"
-        fstype: ext4  # Change to ntfs-3g/exfat if drive is formatted differently
+        fstype: "{{ usb_fstype }}"
         opts: defaults,nofail
         state: mounted
       when: usb_dev.stat.exists and usb_uuid.stdout != ""
 
     - name: Set permissions on USB mount
       ansible.builtin.file:
-        path: /mnt/usb-storage
+        path: "{{ usb_mount }}"
         state: directory
         mode: "0755"
         owner: root

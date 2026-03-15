@@ -20,8 +20,8 @@ data:
           "paths": ["/opt/local-path-provisioner"]
         },
         {
-          "node": "{{ server_hostname }}",
-          "paths": ["/mnt/usb-storage/k8s-volumes"]
+          "node": "{{ storage_node }}",
+          "paths": ["{{ usb_mount }}/k8s-volumes"]
         }
       ]
     }
