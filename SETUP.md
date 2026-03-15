@@ -1,129 +1,108 @@
-# Pi K8s Cluster — Setup Guide
+# Setup Guide
 
-End-to-end instructions to go from bare hardware to a running K3s cluster with Jellyfin.
+End-to-end steps to go from bare hardware to a running K3s cluster with Jellyfin.
+See [README](README.md) for hardware overview, network topology, and node assignments.
 
 ---
 
 ## Prerequisites
 
-### Hardware
-- 3x Raspberry Pi 4 Model B (2x 8GB, 1x 4GB)
-- 3x PoE hats
-- 1x TP-Link TL-SG605P (5-port unmanaged PoE switch)
-- 1x ATT BGW320-500 gateway
-- 3x microSD cards (2x 64GB for agents, 1x 32GB for server)
-- 1x USB flash drive for Jellyfin media storage (plugged into apple-pi)
-
-### Node assignments
-| Hostname    | IP            | Role         | RAM | SD Card |
-|-------------|---------------|--------------|-----|---------|
-| the-bakery  | 192.168.1.100 | K3s server   | 4GB | 32GB    |
-| apple-pi    | 192.168.1.101 | K3s agent    | 8GB | 64GB    |
-| pumpkin-pi  | 192.168.1.102 | K3s agent    | 8GB | 64GB    |
-
-### Mac tools required
-```
+Install Ansible on your Mac:
+```bash
 brew install ansible
 ansible-galaxy collection install community.general ansible.posix
 ```
-
-### ATT BGW320-500 — IMPORTANT
-**Only use ETH1, ETH3, or ETH4 for the switch.**
-ETH2 is the multi-gig/passthrough port and does NOT serve LAN DHCP — devices behind it will never appear on your network.
 
 ---
 
 ## Step 1 — Flash SD cards
 
 Use **Raspberry Pi Imager** to flash **Ubuntu Server 24.04 LTS (64-bit)** onto each card.
-- Do NOT use Imager's built-in customization (no hostname, no SSH, no WiFi) — cloud-init handles all of that.
+
+> **Do not use Imager's built-in customization** (no hostname, no SSH, no WiFi) — cloud-init handles all of that.
 
 ---
 
-## Step 2 — Write cloud-init files to SD cards
+## Step 2 — Write cloud-init files
 
-Generate all config files from the single source of truth:
+Generate all configs from the single source of truth:
 ```bash
 make generate
 ```
 
-For each SD card, insert it into your Mac. The `system-boot` partition auto-mounts. Then run the matching command:
+For each card, insert it into your Mac — `system-boot` auto-mounts. Run the matching command:
 
-**the-bakery (32GB card):**
+**the-bakery:**
 ```bash
 cp cloud-init/network-config-the-bakery.yaml /Volumes/system-boot/network-config && \
 cp cloud-init/user-data-the-bakery.yaml /Volumes/system-boot/user-data && \
 cp cloud-init/meta-data-the-bakery.yaml /Volumes/system-boot/meta-data && \
-diskutil eject /Volumes/system-boot && \
-echo "the-bakery ready"
+diskutil eject /Volumes/system-boot && echo "done"
 ```
 
-**apple-pi (64GB card):**
+**apple-pi:**
 ```bash
 cp cloud-init/network-config-apple-pi.yaml /Volumes/system-boot/network-config && \
 cp cloud-init/user-data-apple-pi.yaml /Volumes/system-boot/user-data && \
 cp cloud-init/meta-data-apple-pi.yaml /Volumes/system-boot/meta-data && \
-diskutil eject /Volumes/system-boot && \
-echo "apple-pi ready"
+diskutil eject /Volumes/system-boot && echo "done"
 ```
 
-**pumpkin-pi (64GB card):**
+**pumpkin-pi:**
 ```bash
 cp cloud-init/network-config-pumpkin-pi.yaml /Volumes/system-boot/network-config && \
 cp cloud-init/user-data-pumpkin-pi.yaml /Volumes/system-boot/user-data && \
 cp cloud-init/meta-data-pumpkin-pi.yaml /Volumes/system-boot/meta-data && \
-diskutil eject /Volumes/system-boot && \
-echo "pumpkin-pi ready"
+diskutil eject /Volumes/system-boot && echo "done"
 ```
 
 ---
 
-## Step 3 — Physical setup
+## Step 3 — Physical assembly
 
 1. Insert SD cards into the correct Pis
-2. Plug apple-pi's USB flash drive into a **blue USB 3.0 port**
-3. Connect all Pis to PoE switch ports 1–3
-4. Connect switch port 5 to ATT gateway **ETH1** (not ETH2)
-5. Power on — the switch powers the Pis via PoE
+2. Plug the USB flash drive into apple-pi's **blue USB 3.0 port**
+3. Connect Pis to PoE switch ports 1–3
+4. Connect switch port 5 to the ATT gateway — **ETH1, ETH3, or ETH4 only** (ETH2 is a passthrough port and won't serve DHCP)
+5. Power on — PoE switch powers the Pis automatically
 
-**Do not unplug ethernet while Pis are booting** — this can corrupt dpkg mid-install.
+> **Don't unplug ethernet while Pis are booting.** Losing connectivity mid-install can corrupt dpkg state.
 
 ---
 
-## Step 4 — Wait for cloud-init
+## Step 4 — Wait for cloud-init (~5–10 min)
 
-cloud-init runs package updates on first boot. This takes **5–10 minutes**.
-
-Monitor progress:
+cloud-init runs package updates on first boot. Poll until all three nodes appear:
 ```bash
 sudo nmap -sn 192.168.1.0/24
+# Wait for .100, .101, .102 to show up with Raspberry Pi MACs
 ```
 
-Wait until `.100`, `.101`, `.102` all appear with `Raspberry Pi Trading` MACs.
-
-Verify SSH access:
+Then verify SSH:
 ```bash
 ssh ubuntu@192.168.1.100
 ```
 
 ---
 
-## Step 5 — Run Ansible playbooks
+## Step 5 — Run Ansible
 
 ```bash
-make setup        # Base OS config + USB mount on apple-pi
-make install-k3s  # Install K3s server + agents
-make deploy       # Deploy Jellyfin to the cluster
+make setup         # OS prep, USB mount on apple-pi, avahi mDNS
+make install-k3s   # Install K3s server then agents
+make deploy        # Apply all k8s manifests
 ```
 
 Each command is idempotent — safe to re-run.
+
+> `make setup` may appear to hang after completing — this is normal. The `cloud-init status --wait` step uses a 5-minute timeout and exits cleanly.
 
 ---
 
 ## Step 6 — Verify
 
 ```bash
-ssh ubuntu@192.168.1.100 "kubectl get nodes"
+make status
 # Expected:
 # NAME         STATUS   ROLES           AGE   VERSION
 # apple-pi     Ready    <none>          ...   v1.34.x+k3s1
@@ -131,20 +110,16 @@ ssh ubuntu@192.168.1.100 "kubectl get nodes"
 # the-bakery   Ready    control-plane   ...   v1.34.x+k3s1
 ```
 
----
-
-## Re-running cloud-init (if config changes are needed)
-
-To force cloud-init to re-run on next boot, increment `cloud_init_version` in `ansible/group_vars/all.yaml`, then `make generate` and re-copy files to the SD card(s). The changed `instance-id` in `meta-data` triggers a full re-run.
+Jellyfin should be accessible at `http://jellyfin.local` (Apple) or `http://192.168.1.100` (other clients).
 
 ---
 
-## Useful commands
+## Re-running cloud-init
 
-```bash
-make ssh-the-bakery     # SSH into server node
-make ssh-apple-pi       # SSH into apple-pi
-make ssh-pumpkin-pi     # SSH into pumpkin-pi
-make status             # kubectl get nodes + pods
-make logs               # Tail Jellyfin logs
-```
+To force a re-run after config changes (e.g. if you need to reprovision a node):
+
+1. Increment `cloud_init_version` in `ansible/group_vars/all.yaml`
+2. Run `make generate`
+3. Re-copy the updated `network-config`, `user-data`, and `meta-data` files to the SD card (Step 2 above)
+
+The new `instance-id` in `meta-data` triggers a full cloud-init re-run on next boot.
