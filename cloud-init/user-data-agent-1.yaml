@@ -1,7 +1,7 @@
 #cloud-config
-# pi-agent-1 (4GB Pi 4) - K3s agent node
+# ApplePi (4GB Pi 4) - K3s agent node
 
-hostname: pi-agent-1
+hostname: ApplePi
 manage_etc_hosts: true
 
 users:
@@ -43,4 +43,4 @@ runcmd:
   - echo "net.ipv4.ip_forward=1" >> /etc/sysctl.d/k3s.conf
   - sysctl --system
 
-final_message: "pi-agent-1 cloud-init complete after $UPTIME seconds"
+final_message: "ApplePi cloud-init complete after $UPTIME seconds"

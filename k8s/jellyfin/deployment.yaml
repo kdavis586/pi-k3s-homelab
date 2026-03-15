@@ -18,9 +18,9 @@ spec:
       labels:
         app: jellyfin
     spec:
-      # Pin to pi-server — that's where the USB drive is mounted
+      # Pin to TheBakery — that's where the USB drive is mounted
       nodeSelector:
-        kubernetes.io/hostname: pi-server
+        kubernetes.io/hostname: TheBakery
 
       containers:
         - name: jellyfin

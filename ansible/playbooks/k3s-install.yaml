@@ -1,6 +1,6 @@
 ---
 # Install K3s on all nodes.
-# Installs the server on pi-server, then joins agents.
+# Installs the server on TheBakery, then joins agents.
 # Usage: ansible-playbook ansible/playbooks/k3s-install.yaml
 #
 # To uninstall: run /usr/local/bin/k3s-uninstall.sh (server)
@@ -80,7 +80,7 @@
       ansible.builtin.slurp:
         src: /var/lib/rancher/k3s/server/node-token
       register: node_token_b64
-      delegate_to: pi-server
+      delegate_to: TheBakery
 
     - name: Set node token fact
       ansible.builtin.set_fact:

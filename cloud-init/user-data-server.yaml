@@ -1,7 +1,7 @@
 #cloud-config
-# pi-server (8GB Pi 4) - K3s server node
+# TheBakery (8GB Pi 4) - K3s server node
 
-hostname: pi-server
+hostname: TheBakery
 manage_etc_hosts: true
 
 # Create the default ubuntu user with SSH key auth
@@ -54,4 +54,4 @@ runcmd:
   - sysctl --system
 
 # Signal that cloud-init is done
-final_message: "pi-server cloud-init complete after $UPTIME seconds"
+final_message: "TheBakery cloud-init complete after $UPTIME seconds"

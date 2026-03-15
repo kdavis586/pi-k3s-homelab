@@ -18,7 +18,7 @@ data:
           "paths": ["/opt/local-path-provisioner"]
         },
         {
-          "node": "pi-server",
+          "node": "TheBakery",
           "paths": ["/mnt/usb-storage/k8s-volumes"]
         }
       ]

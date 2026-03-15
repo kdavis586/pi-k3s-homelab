@@ -28,11 +28,11 @@ status: ## Show node and pod status
 logs: ## Tail Jellyfin logs
 	$(KUBECTL) logs -n jellyfin -l app=jellyfin -f
 
-ssh-server: ## SSH into pi-server
+ssh-server: ## SSH into TheBakery (server)
 	ssh ubuntu@192.168.1.100
 
-ssh-agent-1: ## SSH into pi-agent-1
+ssh-agent-1: ## SSH into ApplePi (agent 1)
 	ssh ubuntu@192.168.1.101
 
-ssh-agent-2: ## SSH into pi-agent-2
+ssh-agent-2: ## SSH into PumpkinPi (agent 2)
 	ssh ubuntu@192.168.1.102
