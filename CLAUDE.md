@@ -102,11 +102,17 @@ kubectl --kubeconfig ~/.kube/config-pi-k3s scale deployment jellyfin -n jellyfin
 ## Media upload
 
 Fastest for bulk: physically swap USB drive (see above).
-For ongoing uploads: `rsync` directly to apple-pi:
+
+For ongoing uploads, two options:
+
+**Samba (easiest — no credentials, guest access):**
+- macOS: Finder → Go → Connect to Server → `smb://apple-pi.local/media`
+- Windows: File Explorer → `\\apple-pi\media`
+
+**rsync:**
 ```bash
 rsync -av --progress ~/path/to/media/ ubuntu@192.168.1.101:/mnt/usb-storage/media/
 ```
-Samba has been removed — rsync/scp is the preferred transfer method.
 
 ---
 

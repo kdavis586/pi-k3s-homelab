@@ -42,6 +42,7 @@ graph TD
 - **K8s**: K3s with Traefik ingress + local-path-provisioner
 - **Workloads**: Jellyfin media server, pinned to apple-pi (USB storage node)
 - **mDNS**: avahi-daemon on all nodes; `jellyfin.local` published from the-bakery
+- **File sharing**: Samba on apple-pi; guest access to `/mnt/usb-storage/media` with no password
 
 ## Quick Start
 
@@ -113,10 +114,13 @@ A 128GB USB-C flash drive is attached to apple-pi (`/dev/sda1`, exFAT) mounted a
 - Jellyfin config: `/mnt/usb-storage/k8s-volumes` (local-path PVC)
 - Jellyfin media: `/mnt/usb-storage/media` (hostPath, directly visible to container)
 
-**Media upload** — rsync is the preferred method for ongoing uploads:
-```bash
-rsync -av --progress ~/path/to/media/ ubuntu@192.168.1.101:/mnt/usb-storage/media/
-```
+**Media upload** — Samba share (guest, no password) or rsync:
+
+| Method | How |
+|--------|-----|
+| macOS (Samba) | Finder → Go → Connect to Server → `smb://apple-pi.local/media` |
+| Windows (Samba) | File Explorer → `\\apple-pi\media` |
+| rsync | `rsync -av --progress ~/path/to/media/ ubuntu@192.168.1.101:/mnt/usb-storage/media/` |
 
 For bulk transfers, physically swapping the USB drive is faster (exFAT, unmount/remount):
 ```bash
