@@ -35,6 +35,25 @@ The `cloud-init status --wait` step uses `timeout 300 ... || true` to avoid bloc
 
 ---
 
+## K3s / Ubuntu gotchas
+
+### systemd-resolved stub listener breaks containerd image pulls
+k3s installs iptables rules that intercept loopback port 53 traffic, silently breaking
+the systemd-resolved stub listener at `127.0.0.53`. Ubuntu's default `/etc/resolv.conf`
+points at the stub, so containerd uses it for image pulls — which then fail with
+`lookup <host>: Try again` even though DNS itself is healthy (resolvectl still works).
+
+**Fix (already applied via `base-setup.yaml`):**
+- Drop `/etc/systemd/resolved.conf.d/nostub.conf` with `DNSStubListener=no`
+- Repoint `/etc/resolv.conf` → `/run/systemd/resolve/resolv.conf` (real upstream IPs, not stub)
+- Restart systemd-resolved
+
+This is a [documented k3s/Ubuntu prerequisite](https://docs.k3s.io/advanced#additional-os-preparations).
+Symptom if it regresses: pods stuck in `ImagePullBackOff` and `dig @127.0.0.53` returns
+"connection refused" while `resolvectl query <host>` succeeds.
+
+---
+
 ## Hardware gotchas discovered during initial setup
 
 ### TP-Link TL-SG605P Extend mode
