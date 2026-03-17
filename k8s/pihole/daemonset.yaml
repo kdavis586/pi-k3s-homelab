@@ -46,7 +46,7 @@ spec:
             # Web UI moved off port 80 — Traefik's iptables rules intercept port 80
             # on the host when hostNetwork is enabled.
             - name: FTLCONF_webserver_port
-              value: "8080o"
+              value: "8080"
             # DHCP server — Pi-hole handles DHCP so all LAN devices automatically
             # receive Pi-hole as their DNS server. AT&T BGW320-500 does not expose
             # DHCP DNS settings, so this is the only way to cover all devices.
