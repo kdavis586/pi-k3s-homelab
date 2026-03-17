@@ -14,4 +14,4 @@ spec:
       kind: Rule
       services:
         - name: pihole-web
-          port: 80
+          port: 8080

@@ -14,6 +14,12 @@ spec:
       labels:
         app: pihole
     spec:
+      # hostNetwork required for DHCP — DHCP clients broadcast to 255.255.255.255:67
+      # which iptables cannot DNAT (unicast only). Pod must share the host network
+      # namespace to receive broadcasts directly on the LAN interface.
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
+
       affinity:
         nodeAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
@@ -30,13 +36,34 @@ spec:
           imagePullPolicy: IfNotPresent
           env:
             - name: TZ
-              value: "UTC"  # Change to your timezone, e.g. America/Chicago
+              value: "UTC"
             - name: FTLCONF_webserver_api_password
               value: ""  # Explicitly empty = no password (local LAN only)
             - name: FTLCONF_dns_upstreams
               value: "8.8.8.8;8.8.4.4"
             - name: FTLCONF_dns_listeningMode
               value: "ALL"
+            # Web UI moved off port 80 — Traefik's iptables rules intercept port 80
+            # on the host when hostNetwork is enabled.
+            - name: FTLCONF_webserver_port
+              value: "8080o"
+            # DHCP server — Pi-hole handles DHCP so all LAN devices automatically
+            # receive Pi-hole as their DNS server. AT&T BGW320-500 does not expose
+            # DHCP DNS settings, so this is the only way to cover all devices.
+            - name: FTLCONF_dhcp_active
+              value: "true"
+            - name: FTLCONF_dhcp_start
+              value: "192.168.1.2"
+            - name: FTLCONF_dhcp_end
+              value: "192.168.1.253"
+            - name: FTLCONF_dhcp_router
+              value: "192.168.1.254"
+            - name: FTLCONF_dhcp_leaseTime
+              value: "24h"
+          securityContext:
+            capabilities:
+              add:
+                - NET_ADMIN  # Required for DHCP server
           ports:
             - containerPort: 53
               name: dns-udp
@@ -44,7 +71,10 @@ spec:
             - containerPort: 53
               name: dns-tcp
               protocol: TCP
-            - containerPort: 80
+            - containerPort: 67
+              name: dhcp
+              protocol: UDP
+            - containerPort: 8080
               name: http
               protocol: TCP
           resources:
