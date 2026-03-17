@@ -38,6 +38,32 @@
           - avahi-utils
         state: present
 
+    # k3s iptables rules intercept loopback port 53 traffic, breaking systemd-resolved's
+    # stub listener at 127.0.0.53. Fix: disable the stub and point /etc/resolv.conf at
+    # the real upstream DNS IPs directly. This is a documented k3s/Ubuntu prerequisite.
+    - name: Ensure resolved.conf.d directory exists
+      ansible.builtin.file:
+        path: /etc/systemd/resolved.conf.d
+        state: directory
+        mode: "0755"
+
+    - name: Disable systemd-resolved stub listener
+      ansible.builtin.copy:
+        dest: /etc/systemd/resolved.conf.d/nostub.conf
+        mode: "0644"
+        content: |
+          [Resolve]
+          DNSStubListener=no
+      notify: Restart systemd-resolved
+
+    - name: Point /etc/resolv.conf at upstream DNS (not stub)
+      ansible.builtin.file:
+        path: /etc/resolv.conf
+        src: /run/systemd/resolve/resolv.conf
+        state: link
+        force: true
+      notify: Restart systemd-resolved
+
     - name: Enable and start avahi-daemon (mDNS for .local resolution)
       ansible.builtin.systemd:
         name: avahi-daemon
@@ -85,6 +111,13 @@
         - { key: net.bridge.bridge-nf-call-iptables, value: "1" }
         - { key: net.bridge.bridge-nf-call-ip6tables, value: "1" }
         - { key: net.ipv4.ip_forward, value: "1" }
+
+  handlers:
+    - name: Restart systemd-resolved
+      ansible.builtin.systemd:
+        name: systemd-resolved
+        state: restarted
+        daemon_reload: true
 
 - name: Publish jellyfin.local mDNS alias on server node
   hosts: servers
