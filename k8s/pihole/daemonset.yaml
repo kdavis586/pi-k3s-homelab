@@ -32,7 +32,7 @@ spec:
             - name: TZ
               value: "UTC"  # Change to your timezone, e.g. America/Chicago
             - name: WEBPASSWORD
-              value: "changeme"  # Change before deploying
+              value: ""  # Empty = no password required (local LAN only)
             - name: PIHOLE_DNS_1
               value: "8.8.8.8"
             - name: PIHOLE_DNS_2
