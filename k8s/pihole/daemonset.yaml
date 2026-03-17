@@ -57,15 +57,9 @@ spec:
           volumeMounts:
             - name: pihole-data
               mountPath: /etc/pihole
-            - name: dnsmasq-data
-              mountPath: /etc/dnsmasq.d
 
       volumes:
         - name: pihole-data
           hostPath:
             path: /var/lib/pihole/etc-pihole
-            type: DirectoryOrCreate
-        - name: dnsmasq-data
-          hostPath:
-            path: /var/lib/pihole/etc-dnsmasq.d
             type: DirectoryOrCreate
