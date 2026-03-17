@@ -31,16 +31,12 @@ spec:
           env:
             - name: TZ
               value: "UTC"  # Change to your timezone, e.g. America/Chicago
-            - name: WEBPASSWORD
-              value: ""  # Empty = no password required (local LAN only)
-            - name: PIHOLE_DNS_1
-              value: "8.8.8.8"
-            - name: PIHOLE_DNS_2
-              value: "8.8.4.4"
-            - name: DNSMASQ_LISTENING
-              value: "all"
-            - name: VIRTUAL_HOST
-              value: "pihole.local"
+            - name: FTLCONF_webserver_api_password
+              value: ""  # Explicitly empty = no password (local LAN only)
+            - name: FTLCONF_dns_upstreams
+              value: "8.8.8.8;8.8.4.4"
+            - name: FTLCONF_dns_listeningMode
+              value: "ALL"
           ports:
             - containerPort: 53
               name: dns-udp
