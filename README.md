@@ -25,7 +25,7 @@ graph TD
     bakery[the-bakery<br/>192.168.1.100<br/>K3s control plane<br/>4GB RAM · 32GB SD]
     apple[apple-pi<br/>192.168.1.101<br/>K3s agent · Jellyfin<br/>8GB RAM · 64GB SD]
     pumpkin[pumpkin-pi<br/>192.168.1.102<br/>K3s agent<br/>8GB RAM · 64GB SD]
-    usb[(128GB USB-C<br/>/mnt/usb-storage)]
+    usb[(128GB Flash Drive<br/>/mnt/usb-storage)]
 
     internet --> att
     mac -->|WiFi| att
@@ -33,7 +33,7 @@ graph TD
     switch -->|PoE port 1| bakery
     switch -->|PoE port 2| apple
     switch -->|PoE port 3| pumpkin
-    apple -.-|attached| usb
+    apple -.-|USB 3.0 port| usb
 ```
 
 ## Stack
