@@ -54,12 +54,3 @@ spec:
             limits:
               memory: 256Mi
               cpu: 500m
-          volumeMounts:
-            - name: pihole-data
-              mountPath: /etc/pihole
-
-      volumes:
-        - name: pihole-data
-          hostPath:
-            path: /var/lib/pihole/etc-pihole
-            type: DirectoryOrCreate
