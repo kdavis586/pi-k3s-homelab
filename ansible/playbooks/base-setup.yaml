@@ -64,6 +64,26 @@
         force: true
       notify: Restart systemd-resolved
 
+    # Pi-hole runs on this cluster and the router will advertise it as the LAN DNS server
+    # via DHCP. If the nodes used DHCP-assigned DNS, a Pi-hole pod restart would be unable
+    # to resolve Docker Hub to pull its own image — a chicken-and-egg deadlock. Fix: pin
+    # node DNS to external resolvers via a netplan override so DHCP DNS is always ignored.
+    - name: Pin node DNS to external resolvers (ignore DHCP-assigned DNS)
+      ansible.builtin.copy:
+        dest: /etc/netplan/99-dns-override.yaml
+        mode: "0600"
+        content: |
+          network:
+            version: 2
+            ethernets:
+              eth0:
+                dhcp4: true
+                nameservers:
+                  addresses:
+                    - 8.8.8.8
+                    - 1.1.1.1
+      notify: Apply netplan
+
     - name: Enable and start avahi-daemon (mDNS for .local resolution)
       ansible.builtin.systemd:
         name: avahi-daemon
@@ -118,6 +138,10 @@
         name: systemd-resolved
         state: restarted
         daemon_reload: true
+
+    - name: Apply netplan
+      ansible.builtin.command: netplan apply
+      changed_when: true
 
 - name: Publish jellyfin.local mDNS alias on server node
   hosts: servers

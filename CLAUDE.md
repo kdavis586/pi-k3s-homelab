@@ -37,6 +37,17 @@ The `cloud-init status --wait` step uses `timeout 300 ... || true` to avoid bloc
 
 ## K3s / Ubuntu gotchas
 
+### Cluster nodes must use static DNS, not DHCP-assigned DNS
+
+The router advertises Pi-hole's IPs as the LAN DNS server via DHCP. If cluster nodes
+accepted that, a Pi-hole pod restart would be unable to resolve Docker Hub to pull its
+own image — a chicken-and-egg deadlock.
+
+**Fix (applied via `base-setup.yaml`):** A netplan override at
+`/etc/netplan/99-dns-override.yaml` pins every node to `8.8.8.8` and `1.1.1.1`,
+ignoring whatever DNS DHCP assigns. Nodes always resolve via external DNS directly;
+Pi-hole serves client devices only.
+
 ### systemd-resolved stub listener breaks containerd image pulls
 k3s installs iptables rules that intercept loopback port 53 traffic, silently breaking
 the systemd-resolved stub listener at `127.0.0.53`. Ubuntu's default `/etc/resolv.conf`
