@@ -22,3 +22,6 @@ ansible/inventory.local.yaml
 # Kubeconfig (written to ~/.kube/, but just in case)
 kubeconfig
 *.kubeconfig
+
+# Local session state (not for version control)
+STATE.md
