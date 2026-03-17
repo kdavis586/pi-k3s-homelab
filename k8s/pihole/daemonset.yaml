@@ -1,0 +1,75 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: pihole
+  namespace: pihole
+  labels:
+    app: pihole
+spec:
+  selector:
+    matchLabels:
+      app: pihole
+  template:
+    metadata:
+      labels:
+        app: pihole
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: homelab/node-group
+                    operator: In
+                    values:
+                      - workloads
+
+      containers:
+        - name: pihole
+          image: pihole/pihole:latest
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: TZ
+              value: "UTC"  # Change to your timezone, e.g. America/Chicago
+            - name: WEBPASSWORD
+              value: "changeme"  # Change before deploying
+            - name: PIHOLE_DNS_1
+              value: "8.8.8.8"
+            - name: PIHOLE_DNS_2
+              value: "8.8.4.4"
+            - name: DNSMASQ_LISTENING
+              value: "all"
+            - name: VIRTUAL_HOST
+              value: "pihole.local"
+          ports:
+            - containerPort: 53
+              name: dns-udp
+              protocol: UDP
+            - containerPort: 53
+              name: dns-tcp
+              protocol: TCP
+            - containerPort: 80
+              name: http
+              protocol: TCP
+          resources:
+            requests:
+              memory: 128Mi
+              cpu: 100m
+            limits:
+              memory: 256Mi
+              cpu: 500m
+          volumeMounts:
+            - name: pihole-data
+              mountPath: /etc/pihole
+            - name: dnsmasq-data
+              mountPath: /etc/dnsmasq.d
+
+      volumes:
+        - name: pihole-data
+          hostPath:
+            path: /var/lib/pihole/etc-pihole
+            type: DirectoryOrCreate
+        - name: dnsmasq-data
+          hostPath:
+            path: /var/lib/pihole/etc-dnsmasq.d
+            type: DirectoryOrCreate

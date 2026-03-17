@@ -1,0 +1,25 @@
+---
+# LoadBalancer service for DNS — klipper-lb will forward port 53 (UDP + TCP)
+# on all node IPs to whichever Pi-hole pod is healthy.
+# Configure your router with any/all node IPs as DNS servers:
+#   Primary:   192.168.1.101  (apple-pi)
+#   Secondary: 192.168.1.102  (pumpkin-pi)
+#   Tertiary:  192.168.1.100  (the-bakery, relays via klipper-lb)
+apiVersion: v1
+kind: Service
+metadata:
+  name: pihole-dns
+  namespace: pihole
+spec:
+  selector:
+    app: pihole
+  type: LoadBalancer
+  ports:
+    - name: dns-udp
+      port: 53
+      targetPort: 53
+      protocol: UDP
+    - name: dns-tcp
+      port: 53
+      targetPort: 53
+      protocol: TCP

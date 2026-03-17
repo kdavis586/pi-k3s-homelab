@@ -16,16 +16,23 @@ dns_servers:
   - "192.168.1.254"
   - "8.8.8.8"
 
+# ── Node groups ───────────────────────────────────────────────────────────────
+# Label key applied to each node: homelab/node-group
+# Used for workload affinity — add new nodes here to include them in a group.
+
 # ── Server node ──────────────────────────────────────────────────────────────
 server_hostname: the-bakery
 server_ip: "192.168.1.100"
+server_node_group: control
 
 # ── Agent nodes ──────────────────────────────────────────────────────────────
 agent_nodes:
   - hostname: apple-pi
     ip: "192.168.1.101"
+    node_group: workloads
   - hostname: pumpkin-pi
     ip: "192.168.1.102"
+    node_group: workloads
 
 # ── Storage ───────────────────────────────────────────────────────────────────
 # Node where the USB drive is attached and Jellyfin is pinned

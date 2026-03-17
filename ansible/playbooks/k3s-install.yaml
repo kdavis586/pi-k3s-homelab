@@ -116,3 +116,20 @@
     - name: Print cluster nodes
       ansible.builtin.debug:
         msg: "{{ nodes_output.stdout_lines }}"
+
+- name: Label cluster nodes
+  hosts: servers
+  become: false
+  tasks:
+    - name: Label server node
+      ansible.builtin.command: >
+        kubectl label node {{ server_hostname }}
+        homelab/node-group={{ server_node_group }} --overwrite
+      changed_when: true
+
+    - name: Label agent nodes
+      ansible.builtin.command: >
+        kubectl label node {{ item.hostname }}
+        homelab/node-group={{ item.node_group }} --overwrite
+      loop: "{{ agent_nodes }}"
+      changed_when: true

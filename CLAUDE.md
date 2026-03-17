@@ -19,6 +19,17 @@ make status       # kubectl get nodes + pods
 make ssh-<name>   # e.g. make ssh-the-bakery, make ssh-apple-pi
 ```
 
+### CRITICAL: Use make for everything
+
+**All setup, deployment, and re-deployment of changes must go through `make` commands.**
+Never run `kubectl` or `ansible` commands directly — not even "just this once".
+
+The only exceptions are physical setup steps: SD card preparation and physical networking.
+Everything else goes through `make`.
+
+- Wrong: `kubectl apply -f ...`, `kubectl label ...`, `ansible-playbook ...`
+- Right: encode the change in Ansible/manifests, then run the appropriate `make` command
+
 `make setup` can appear to hang in the terminal even after completing — this is a known quirk.
 The `cloud-init status --wait` step uses `timeout 300 ... || true` to avoid blocking indefinitely.
 

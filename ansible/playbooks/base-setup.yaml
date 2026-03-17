@@ -115,6 +115,31 @@
         state: started
         daemon_reload: true
 
+    - name: Create avahi alias systemd service for pihole.local
+      ansible.builtin.copy:
+        dest: /etc/systemd/system/avahi-alias-pihole.service
+        mode: "0644"
+        content: |
+          [Unit]
+          Description=mDNS alias pihole.local -> {{ server_ip }}
+          After=avahi-daemon.service
+          Requires=avahi-daemon.service
+
+          [Service]
+          Type=simple
+          ExecStart=/usr/bin/avahi-publish --address -R pihole.local {{ server_ip }}
+          Restart=on-failure
+
+          [Install]
+          WantedBy=multi-user.target
+
+    - name: Enable and start pihole.local mDNS alias
+      ansible.builtin.systemd:
+        name: avahi-alias-pihole
+        enabled: true
+        state: started
+        daemon_reload: true
+
 - name: Mount USB drive on storage node
   hosts: apple-pi
   become: true
