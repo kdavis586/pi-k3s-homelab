@@ -1,0 +1,60 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: pihole
+  namespace: pihole
+  labels:
+    app: pihole
+spec:
+  selector:
+    matchLabels:
+      app: pihole
+  template:
+    metadata:
+      labels:
+        app: pihole
+    spec:
+      # hostNetwork required for DHCP — DHCP clients broadcast to 255.255.255.255:67
+      # which iptables cannot DNAT (unicast only). Pod must share the host network
+      # namespace to receive broadcasts directly on the LAN interface.
+      hostNetwork: {{ .Values.hostNetwork }}
+      dnsPolicy: {{ .Values.dnsPolicy }}
+
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: {{ .Values.nodeAffinity.key }}
+                    operator: In
+                    values:
+                      {{- toYaml .Values.nodeAffinity.values | nindent 22 }}
+
+      containers:
+        - name: pihole
+          image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+            {{- range $key, $val := .Values.env }}
+            - name: {{ $key }}
+              value: {{ $val | quote }}
+            {{- end }}
+          securityContext:
+            capabilities:
+              add:
+                - NET_ADMIN  # Required for DHCP server
+          ports:
+            - containerPort: 53
+              name: dns-udp
+              protocol: UDP
+            - containerPort: 53
+              name: dns-tcp
+              protocol: TCP
+            - containerPort: 67
+              name: dhcp
+              protocol: UDP
+            - containerPort: {{ .Values.service.webPort }}
+              name: http
+              protocol: TCP
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
