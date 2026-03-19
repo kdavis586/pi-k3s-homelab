@@ -76,6 +76,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Helm Charts and Flux Wiring | 3/3 | Complete   | 2026-03-19 |
-| 2. Flux Bootstrap | 0/TBD | Not started | - |
+| 2. Flux Bootstrap | 1/2 | In Progress|  |
 | 3. Migration and Ownership Transfer | 0/TBD | Not started | - |
 | 4. Makefile Cleanup | 0/TBD | Not started | - |

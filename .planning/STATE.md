@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: unknown
-stopped_at: Completed 01-03-PLAN.md
-last_updated: "2026-03-19T03:01:18.696Z"
+stopped_at: Completed 02-01-PLAN.md
+last_updated: "2026-03-19T13:07:44.221Z"
 progress:
   total_phases: 4
   completed_phases: 1
-  total_plans: 3
-  completed_plans: 3
+  total_plans: 5
+  completed_plans: 4
 ---
 
 # Project State
@@ -19,12 +19,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-18)
 
 **Core value:** Push to main → cluster converges. No manual deploy steps after initial cluster setup.
-**Current focus:** Phase 01 — helm-charts-and-flux-wiring
+**Current focus:** Phase 02 — flux-bootstrap
 
 ## Current Position
 
-Phase: 01 (helm-charts-and-flux-wiring) — COMPLETE
-Plan: 3 of 3 (all plans complete)
+Phase: 02 (flux-bootstrap) — EXECUTING
+Plan: 1 of 2
 
 ## Performance Metrics
 
@@ -49,6 +49,7 @@ Plan: 3 of 3 (all plans complete)
 | Phase 01-helm-charts-and-flux-wiring P01 | 2min | 2 tasks | 7 files |
 | Phase 01 P02 | 2min | 2 tasks | 6 files |
 | Phase 01 P03 | 1min | 3 tasks | 4 files |
+| Phase 02-flux-bootstrap P01 | 2min | 2 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -68,6 +69,8 @@ Recent decisions affecting current work:
 - [Phase 01 P03]: Flux Kustomization CRD for apps committed to flux/flux-system/apps-kustomization.yaml (not flux/apps/) to avoid filename collision with plain kustomize config
 - [Phase 01 P03]: prune: false mandatory in Phase 1 Flux Kustomization — prevents deletion of live workloads before Flux owns them; Phase 3 enables prune
 - [Phase 01 P03]: reconcileStrategy: Revision must be at spec.chart.spec level in HelmRelease — required for Flux to detect local chart file changes without Chart.yaml version bumps
+- [Phase 02-flux-bootstrap]: bootstrap-flux uses --path=flux so Flux manifests land in flux/flux-system/ (not k8s/flux-system/)
+- [Phase 02-flux-bootstrap]: Flux controller version pinned to v2.4.0 via --version flag matching flux_version in all.yaml
 
 ### Pending Todos
 
@@ -81,6 +84,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-19T02:56:42Z
-Stopped at: Completed 01-03-PLAN.md
+Last session: 2026-03-19T13:07:44.220Z
+Stopped at: Completed 02-01-PLAN.md
 Resume file: None

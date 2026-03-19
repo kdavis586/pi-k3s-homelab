@@ -7,10 +7,10 @@
 
 ### Bootstrap
 
-- [ ] **BOOT-01**: Flux CD v2 controllers are installed on the cluster via `make install-k3s` (or a dedicated `make bootstrap-flux` target called from it)
+- [x] **BOOT-01**: Flux CD v2 controllers are installed on the cluster via `make install-k3s` (or a dedicated `make bootstrap-flux` target called from it)
 - [ ] **BOOT-02**: Flux authenticates to GitHub via SSH deploy key (not HTTPS token) — key generated and registered automatically by `flux bootstrap github`
 - [ ] **BOOT-03**: GitRepository CRD polls the `main` branch of this repo on a 1-minute interval
-- [ ] **BOOT-04**: Bootstrap-generated Flux manifests are committed to `flux/flux-system/` in this repo
+- [x] **BOOT-04**: Bootstrap-generated Flux manifests are committed to `flux/flux-system/` in this repo
 - [ ] **BOOT-05**: First reconcile does not delete existing workloads (`prune: false` set before bootstrap)
 
 ### Helm Charts
@@ -68,10 +68,10 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| BOOT-01 | Phase 2 | Pending |
+| BOOT-01 | Phase 2 | Complete |
 | BOOT-02 | Phase 2 | Pending |
 | BOOT-03 | Phase 2 | Pending |
-| BOOT-04 | Phase 2 | Pending |
+| BOOT-04 | Phase 2 | Complete |
 | BOOT-05 | Phase 2 | Pending |
 | CHART-01 | Phase 1 | Complete |
 | CHART-02 | Phase 1 | Complete |
