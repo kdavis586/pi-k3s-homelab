@@ -4,7 +4,7 @@ ANSIBLE := $(shell command -v ansible-playbook 2>/dev/null || echo ~/.local/bin/
 KUBECONFIG := $(HOME)/.kube/config-pi-k3s
 KUBECTL := kubectl --kubeconfig $(KUBECONFIG)
 
-.PHONY: help generate setup install-k3s deploy status logs
+.PHONY: help generate setup install-k3s deploy status logs bootstrap-flux flux-status flux-reconcile
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-20s\033[0m %s\n", $$1, $$2}'
@@ -24,8 +24,29 @@ install-k3s: ## Install K3s server + agents and fetch kubeconfig
 
 # ── Day-to-day ───────────────────────────────────────────────────────────────
 
-deploy: ## Apply all k8s/ manifests to the cluster
+deploy: ## Apply all k8s/ manifests to the cluster (use before Flux is bootstrapped)
 	$(ANSIBLE) ansible/playbooks/deploy.yaml
+
+# ── Flux CD ───────────────────────────────────────────────────────────────────
+
+bootstrap-flux: ## Bootstrap Flux CD onto the cluster (requires GITHUB_TOKEN env var, flux CLI)
+	@command -v flux >/dev/null 2>&1 || { echo "Error: flux CLI not found. Run: brew install fluxcd/tap/flux"; exit 1; }
+	@[ -n "$(GITHUB_TOKEN)" ] || { echo "Error: GITHUB_TOKEN is not set"; exit 1; }
+	flux bootstrap github \
+		--owner=kdavis586 \
+		--repository=pi-k3s-homelab \
+		--branch=main \
+		--path=flux \
+		--personal \
+		--version=v2.4.0 \
+		--kubeconfig=$(KUBECONFIG)
+
+flux-status: ## Show Flux reconciliation status across all resources
+	flux get all --kubeconfig $(KUBECONFIG)
+
+flux-reconcile: ## Force Flux to re-sync from git immediately
+	flux reconcile source git flux-system --kubeconfig $(KUBECONFIG)
+	flux reconcile kustomization flux-system --kubeconfig $(KUBECONFIG)
 
 status: ## Show node and pod status
 	$(KUBECTL) get nodes,pods,svc,pvc -A
