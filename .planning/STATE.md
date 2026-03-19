@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: unknown
-stopped_at: Completed 01-02-PLAN.md
-last_updated: "2026-03-19T02:53:18.606Z"
+stopped_at: Completed 01-03-PLAN.md
+last_updated: "2026-03-19T02:56:42Z"
 progress:
   total_phases: 4
   completed_phases: 0
   total_plans: 3
-  completed_plans: 2
+  completed_plans: 3
 ---
 
 # Project State
@@ -23,8 +23,8 @@ See: .planning/PROJECT.md (updated 2026-03-18)
 
 ## Current Position
 
-Phase: 01 (helm-charts-and-flux-wiring) — EXECUTING
-Plan: 1 of 3
+Phase: 01 (helm-charts-and-flux-wiring) — COMPLETE
+Plan: 3 of 3 (all plans complete)
 
 ## Performance Metrics
 
@@ -47,7 +47,8 @@ Plan: 1 of 3
 
 *Updated after each plan completion*
 | Phase 01-helm-charts-and-flux-wiring P01 | 2min | 2 tasks | 7 files |
-| Phase 01 P02 | 2 | 2 tasks | 6 files |
+| Phase 01 P02 | 2min | 2 tasks | 6 files |
+| Phase 01 P03 | 1min | 3 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -64,6 +65,9 @@ Recent decisions affecting current work:
 - [Phase 01-helm-charts-and-flux-wiring]: Use Traefik IngressRoute CRD (traefik.io/v1alpha1) not standard Ingress, matching K3s default ingress controller
 - [Phase 01]: Hardcode namespace: pihole in all Helm templates (not Release.Namespace) — chart is single-purpose
 - [Phase 01]: Use Traefik IngressRoute (traefik.io/v1alpha1) CRD in Pi-hole chart — standard Ingress incompatible with K3s bundled Traefik
+- [Phase 01 P03]: Flux Kustomization CRD for apps committed to flux/flux-system/apps-kustomization.yaml (not flux/apps/) to avoid filename collision with plain kustomize config
+- [Phase 01 P03]: prune: false mandatory in Phase 1 Flux Kustomization — prevents deletion of live workloads before Flux owns them; Phase 3 enables prune
+- [Phase 01 P03]: reconcileStrategy: Revision must be at spec.chart.spec level in HelmRelease — required for Flux to detect local chart file changes without Chart.yaml version bumps
 
 ### Pending Todos
 
@@ -77,6 +81,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-19T02:53:18.605Z
-Stopped at: Completed 01-02-PLAN.md
+Last session: 2026-03-19T02:56:42Z
+Stopped at: Completed 01-03-PLAN.md
 Resume file: None

@@ -19,13 +19,13 @@
 - [x] **CHART-02**: Jellyfin chart preserves `nodeSelector: kubernetes.io/hostname: apple-pi`, `Recreate` update strategy, and exFAT-compatible volume (no `fsGroup`/`chown`)
 - [x] **CHART-03**: Pi-hole Helm chart exists at `charts/pihole/` with all resources (DaemonSet, Services, Ingress, Namespace)
 - [x] **CHART-04**: Pi-hole chart preserves `hostNetwork: true`, `NET_ADMIN` capability, and `FTLCONF_webserver_port=8080` env var
-- [ ] **CHART-05**: Both charts have `reconcileStrategy: Revision` configured so template changes deploy without version bumps
+- [x] **CHART-05**: Both charts have `reconcileStrategy: Revision` configured so template changes deploy without version bumps
 
 ### Flux App Wiring
 
-- [ ] **FLUX-01**: HelmRelease CRD for Jellyfin exists at `flux/apps/jellyfin.yaml` referencing `./charts/jellyfin`
-- [ ] **FLUX-02**: HelmRelease CRD for Pi-hole exists at `flux/apps/pihole.yaml` referencing `./charts/pihole`
-- [ ] **FLUX-03**: Kustomization for `flux/apps/` exists and depends on `flux-system` being healthy
+- [x] **FLUX-01**: HelmRelease CRD for Jellyfin exists at `flux/apps/jellyfin.yaml` referencing `./charts/jellyfin`
+- [x] **FLUX-02**: HelmRelease CRD for Pi-hole exists at `flux/apps/pihole.yaml` referencing `./charts/pihole`
+- [x] **FLUX-03**: Kustomization for `flux/apps/` exists and depends on `flux-system` being healthy
 
 ### Migration
 
@@ -77,10 +77,10 @@
 | CHART-02 | Phase 1 | Complete |
 | CHART-03 | Phase 1 | Complete |
 | CHART-04 | Phase 1 | Complete |
-| CHART-05 | Phase 1 | Pending |
-| FLUX-01 | Phase 1 | Pending |
-| FLUX-02 | Phase 1 | Pending |
-| FLUX-03 | Phase 1 | Pending |
+| CHART-05 | Phase 1 | Complete |
+| FLUX-01 | Phase 1 | Complete |
+| FLUX-02 | Phase 1 | Complete |
+| FLUX-03 | Phase 1 | Complete |
 | MIG-01 | Phase 3 | Pending |
 | MIG-02 | Phase 3 | Pending |
 | MIG-03 | Phase 3 | Pending |

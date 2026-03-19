@@ -12,7 +12,7 @@ The cluster already runs Jellyfin and Pi-hole via raw Kubernetes manifests deplo
 
 Decimal phases appear between their surrounding integers in numeric order.
 
-- [ ] **Phase 1: Helm Charts and Flux Wiring** - Author Jellyfin and Pi-hole Helm charts; write HelmRelease CRDs
+- [x] **Phase 1: Helm Charts and Flux Wiring** - Author Jellyfin and Pi-hole Helm charts; write HelmRelease CRDs (completed 2026-03-19)
 - [ ] **Phase 2: Flux Bootstrap** - Install Flux controllers on cluster; wire GitRepository to main branch via SSH
 - [ ] **Phase 3: Migration and Ownership Transfer** - Hand off live workloads from kubectl to Flux; enable pruning
 - [ ] **Phase 4: Makefile Cleanup** - Remove imperative deploy path; add flux diagnostics; update docs
@@ -29,7 +29,7 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. `flux/apps/jellyfin.yaml` and `flux/apps/pihole.yaml` exist as HelmRelease CRDs referencing `./charts/jellyfin` and `./charts/pihole` respectively, both with `reconcileStrategy: Revision`
   4. A Kustomization for `flux/apps/` exists and declares `dependsOn: flux-system`
   5. `helm template` runs successfully against both charts with no errors
-**Plans:** 2/3 plans executed
+**Plans:** 3/3 plans complete
 
 Plans:
 - [ ] 01-01-PLAN.md — Jellyfin Helm chart (Chart.yaml, values.yaml, 5 templates)
@@ -75,7 +75,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Helm Charts and Flux Wiring | 2/3 | In Progress|  |
+| 1. Helm Charts and Flux Wiring | 3/3 | Complete   | 2026-03-19 |
 | 2. Flux Bootstrap | 0/TBD | Not started | - |
 | 3. Migration and Ownership Transfer | 0/TBD | Not started | - |
 | 4. Makefile Cleanup | 0/TBD | Not started | - |
