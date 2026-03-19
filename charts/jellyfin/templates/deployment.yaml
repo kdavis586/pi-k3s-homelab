@@ -1,0 +1,65 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jellyfin
+  namespace: jellyfin
+  labels:
+    app: jellyfin
+spec:
+  replicas: 1
+  # Recreate strategy: Jellyfin cannot run multiple instances sharing the same config volume
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: jellyfin
+  template:
+    metadata:
+      labels:
+        app: jellyfin
+    spec:
+      # Pin to apple-pi — that's where the USB drive is mounted
+      nodeSelector:
+        {{- toYaml .Values.nodeSelector | nindent 8 }}
+
+      containers:
+        - name: jellyfin
+          image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - containerPort: 8096
+              name: http
+              protocol: TCP
+          env:
+            - name: JELLYFIN_PublishedServerUrl
+              value: {{ .Values.publishedServerUrl | quote }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+            - name: config
+              mountPath: /config
+            - name: media
+              mountPath: /media
+          # Liveness probe: restart container if Jellyfin stops responding
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8096
+            initialDelaySeconds: 60
+            periodSeconds: 30
+            failureThreshold: 5
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8096
+            initialDelaySeconds: 30
+            periodSeconds: 10
+
+      volumes:
+        - name: config
+          persistentVolumeClaim:
+            claimName: jellyfin-config
+        - name: media
+          hostPath:
+            path: {{ .Values.storage.mediaHostPath }}
+            type: DirectoryOrCreate
