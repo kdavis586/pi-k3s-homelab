@@ -29,15 +29,25 @@ deploy: ## Apply all k8s/ manifests to the cluster (use before Flux is bootstrap
 
 # ── Flux CD ───────────────────────────────────────────────────────────────────
 
-bootstrap-flux: ## Bootstrap Flux CD onto the cluster (requires GITHUB_TOKEN env var, flux CLI)
+generate-flux-key: ## Generate SSH deploy key for Flux (run once, then add public key to GitHub)
+	@mkdir -p $(HOME)/.ssh
+	@ssh-keygen -t ecdsa -b 521 -C "flux-deploy-key" -f $(HOME)/.ssh/flux-deploy-key -N "" -q
+	@echo ""
+	@echo "Deploy key generated. Add this public key to GitHub:"
+	@echo "  https://github.com/kdavis586/pi-k3s-homelab/settings/keys/new"
+	@echo "  Title: flux-deploy-key"
+	@echo "  Allow write access: YES (Flux needs to push bootstrap manifests)"
+	@echo ""
+	@cat $(HOME)/.ssh/flux-deploy-key.pub
+
+bootstrap-flux: ## Bootstrap Flux CD onto the cluster (run make generate-flux-key first, add key to GitHub)
 	@command -v flux >/dev/null 2>&1 || { echo "Error: flux CLI not found. Run: brew install fluxcd/tap/flux"; exit 1; }
-	@[ -n "$(GITHUB_TOKEN)" ] || { echo "Error: GITHUB_TOKEN is not set"; exit 1; }
-	flux bootstrap github \
-		--owner=kdavis586 \
-		--repository=pi-k3s-homelab \
+	@[ -f "$(HOME)/.ssh/flux-deploy-key" ] || { echo "Error: SSH deploy key not found. Run: make generate-flux-key"; exit 1; }
+	flux bootstrap git \
+		--url=ssh://git@github.com/kdavis586/pi-k3s-homelab \
 		--branch=main \
 		--path=flux \
-		--personal \
+		--private-key-file=$(HOME)/.ssh/flux-deploy-key \
 		--version=v2.4.0 \
 		--kubeconfig=$(KUBECONFIG)
 
