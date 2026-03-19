@@ -29,7 +29,12 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. `flux/apps/jellyfin.yaml` and `flux/apps/pihole.yaml` exist as HelmRelease CRDs referencing `./charts/jellyfin` and `./charts/pihole` respectively, both with `reconcileStrategy: Revision`
   4. A Kustomization for `flux/apps/` exists and declares `dependsOn: flux-system`
   5. `helm template` runs successfully against both charts with no errors
-**Plans**: TBD
+**Plans:** 3 plans
+
+Plans:
+- [ ] 01-01-PLAN.md — Jellyfin Helm chart (Chart.yaml, values.yaml, 5 templates)
+- [ ] 01-02-PLAN.md — Pi-hole Helm chart (Chart.yaml, values.yaml, 4 templates)
+- [ ] 01-03-PLAN.md — Flux wiring (HelmRelease CRDs, Kustomization files, phase validation)
 
 ### Phase 2: Flux Bootstrap
 **Goal**: Flux CD controllers are running on the cluster and reconciling from the main branch of this repository via SSH deploy key
@@ -70,7 +75,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Helm Charts and Flux Wiring | 0/TBD | Not started | - |
+| 1. Helm Charts and Flux Wiring | 0/3 | Planning complete | - |
 | 2. Flux Bootstrap | 0/TBD | Not started | - |
 | 3. Migration and Ownership Transfer | 0/TBD | Not started | - |
 | 4. Makefile Cleanup | 0/TBD | Not started | - |
