@@ -2,9 +2,9 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: unknown
-stopped_at: Completed 04-01-PLAN.md — Phase 4 fully complete
-last_updated: "2026-03-20T14:23:33.500Z"
+status: milestone_complete
+stopped_at: v1.0 GitOps Migration milestone archived — 4 phases, 8 plans complete
+last_updated: "2026-03-20T14:27:11.020Z"
 progress:
   total_phases: 4
   completed_phases: 4
@@ -16,15 +16,15 @@ progress:
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-03-18)
+See: .planning/PROJECT.md (updated 2026-03-20)
 
 **Core value:** Push to main → cluster converges. No manual deploy steps after initial cluster setup.
-**Current focus:** Phase 04 — makefile-cleanup
+**Current focus:** Planning next milestone (v1.1)
 
 ## Current Position
 
-Phase: 04 (makefile-cleanup) — EXECUTING
-Plan: 1 of 1
+Milestone v1.0 complete — all 4 phases shipped.
+Next: `/gsd:new-milestone` to define v1.1 scope.
 
 ## Performance Metrics
 
@@ -94,7 +94,7 @@ None yet.
 
 ### Blockers/Concerns
 
-None — Phase 3 complete. Phase 4 (Makefile Cleanup) ready to begin.
+None — v1.0 milestone complete.
 
 ## Session Continuity
 
