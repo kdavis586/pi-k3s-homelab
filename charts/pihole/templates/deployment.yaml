@@ -1,11 +1,12 @@
 apiVersion: apps/v1
-kind: DaemonSet
+kind: Deployment
 metadata:
   name: pihole
   namespace: pihole
   labels:
     app: pihole
 spec:
+  replicas: 1
   selector:
     matchLabels:
       app: pihole
@@ -20,15 +21,8 @@ spec:
       hostNetwork: {{ .Values.hostNetwork }}
       dnsPolicy: {{ .Values.dnsPolicy }}
 
-      affinity:
-        nodeAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            nodeSelectorTerms:
-              - matchExpressions:
-                  - key: {{ .Values.nodeAffinity.key }}
-                    operator: In
-                    values:
-                      {{- toYaml .Values.nodeAffinity.values | nindent 22 }}
+      nodeSelector:
+        kubernetes.io/hostname: {{ .Values.nodeSelector.hostname }}
 
       containers:
         - name: pihole

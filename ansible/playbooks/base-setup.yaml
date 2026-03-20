@@ -172,19 +172,24 @@
         state: started
         daemon_reload: true
 
+
+- name: Publish pihole.local mDNS alias on pihole node
+  hosts: pumpkin-pi
+  become: true
+  tasks:
     - name: Create avahi alias systemd service for pihole.local
       ansible.builtin.copy:
         dest: /etc/systemd/system/avahi-alias-pihole.service
         mode: "0644"
         content: |
           [Unit]
-          Description=mDNS alias pihole.local -> {{ server_ip }}
+          Description=mDNS alias pihole.local -> 192.168.1.102
           After=avahi-daemon.service
           Requires=avahi-daemon.service
 
           [Service]
           Type=simple
-          ExecStart=/usr/bin/avahi-publish --address -R pihole.local {{ server_ip }}
+          ExecStart=/usr/bin/avahi-publish --address -R pihole.local 192.168.1.102
           Restart=on-failure
 
           [Install]

@@ -6,10 +6,8 @@ image:
 hostNetwork: true
 dnsPolicy: ClusterFirstWithHostNet
 
-nodeAffinity:
-  key: homelab/node-group
-  values:
-    - workloads
+nodeSelector:
+  hostname: pumpkin-pi
 
 env:
   TZ: "UTC"
