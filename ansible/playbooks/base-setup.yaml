@@ -143,34 +143,19 @@
       ansible.builtin.command: netplan apply
       changed_when: true
 
-- name: Publish jellyfin.local mDNS alias on server node
+- name: Clean up legacy avahi-alias-jellyfin systemd service on server node
+  # jellyfin.local mDNS is now published by the mdns-publisher sidecar in the Jellyfin
+  # Helm chart (pointing to apple-pi / 192.168.1.101). The host-level service on
+  # the-bakery pointed to the wrong IP anyway.
   hosts: servers
   become: true
   tasks:
-    - name: Create avahi alias systemd service for jellyfin.local
-      ansible.builtin.copy:
-        dest: /etc/systemd/system/avahi-alias-jellyfin.service
-        mode: "0644"
-        content: |
-          [Unit]
-          Description=mDNS alias jellyfin.local -> {{ server_ip }}
-          After=avahi-daemon.service
-          Requires=avahi-daemon.service
-
-          [Service]
-          Type=simple
-          ExecStart=/usr/bin/avahi-publish --address -R jellyfin.local {{ server_ip }}
-          Restart=on-failure
-
-          [Install]
-          WantedBy=multi-user.target
-
-    - name: Enable and start jellyfin.local mDNS alias
+    - name: Stop and disable legacy avahi-alias-jellyfin service if present
       ansible.builtin.systemd:
         name: avahi-alias-jellyfin
-        enabled: true
-        state: started
-        daemon_reload: true
+        enabled: false
+        state: stopped
+      failed_when: false
 
 
 - name: Clean up legacy avahi-alias-pihole systemd service on pihole node

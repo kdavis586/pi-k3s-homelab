@@ -24,6 +24,8 @@ publishedServerUrl: "http://jellyfin.local"
 ingress:
   hosts:
     - jellyfin.local
-    - 192.168.1.100
-    - 192.168.1.101
-    - 192.168.1.102
+    - 192.168.1.101  # apple-pi — where Jellyfin is pinned
+
+mdns:
+  hostname: jellyfin.local
+  ip: "192.168.1.101"

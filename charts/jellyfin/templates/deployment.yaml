@@ -55,6 +55,29 @@ spec:
             initialDelaySeconds: 30
             periodSeconds: 10
 
+        - name: mdns-publisher
+          # Publishes jellyfin.local mDNS via the host's avahi-daemon.
+          # Mounts the host D-Bus socket so avahi-publish can talk to the avahi-daemon
+          # already running on apple-pi (where this pod is pinned).
+          image: alpine:3.21
+          command:
+            - /bin/sh
+            - -c
+            - "apk add --no-cache avahi && exec avahi-publish --address -r {{ .Values.mdns.hostname }} {{ .Values.mdns.ip }}"
+          env:
+            - name: DBUS_SYSTEM_BUS_ADDRESS
+              value: unix:path=/run/dbus/system_bus_socket
+          volumeMounts:
+            - name: dbus-socket
+              mountPath: /run/dbus/system_bus_socket
+          resources:
+            requests:
+              memory: 16Mi
+              cpu: 10m
+            limits:
+              memory: 32Mi
+              cpu: 50m
+
       volumes:
         - name: config
           persistentVolumeClaim:
@@ -63,3 +86,7 @@ spec:
           hostPath:
             path: {{ .Values.storage.mediaHostPath }}
             type: DirectoryOrCreate
+        - name: dbus-socket
+          hostPath:
+            path: /run/dbus/system_bus_socket
+            type: Socket
