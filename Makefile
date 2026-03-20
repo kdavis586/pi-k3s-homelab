@@ -44,7 +44,7 @@ bootstrap-flux: ## Bootstrap Flux CD using a GitHub App (requires: bw unlocked, 
 		--repository=pi-k3s-homelab \
 		--branch=main \
 		--path=flux \
-		--version=v2.4.0 \
+		--version=v$$(flux --version | awk '{print $$3}') \
 		--kubeconfig=$(KUBECONFIG)
 
 flux-status: ## Show Flux reconciliation status across all resources
