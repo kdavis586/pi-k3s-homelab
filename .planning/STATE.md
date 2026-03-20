@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: unknown
-stopped_at: Completed 03-02-PLAN.md — Phase 3 fully complete
-last_updated: "2026-03-20T11:41:40.368Z"
+stopped_at: Completed 04-01-PLAN.md — Phase 4 fully complete
+last_updated: "2026-03-20T12:04:06.690Z"
 progress:
   total_phases: 4
-  completed_phases: 3
-  total_plans: 7
-  completed_plans: 7
+  completed_phases: 4
+  total_plans: 8
+  completed_plans: 8
 ---
 
 # Project State
@@ -23,8 +23,8 @@ See: .planning/PROJECT.md (updated 2026-03-18)
 
 ## Current Position
 
-Phase: 04 (makefile-cleanup) — NOT STARTED
-Plan: 0 of TBD
+Phase: 04 (makefile-cleanup) — EXECUTING
+Plan: 1 of 1
 
 ## Performance Metrics
 
@@ -54,6 +54,7 @@ Plan: 0 of TBD
 | Phase 03-migration-and-ownership-transfer P01 | 20min | 2 tasks | 2 files |
 | Phase 03-migration-and-ownership-transfer P02 | 9min | 2 tasks | 12 files |
 | Phase 03 P02 | 60min | 3 tasks | 12 files |
+| Phase 04-makefile-cleanup P01 | 4min | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -85,6 +86,7 @@ Recent decisions affecting current work:
 - [Phase 03-migration-and-ownership-transfer]: apps-kustomization.yaml Flux Kustomization CRD is dead config — flux-system Kustomization directly manages HelmReleases; prune already active via flux-system
 - [Phase 03]: Pi-hole converted from DaemonSet to Deployment pinned to pumpkin-pi — one pod, avoids port 53 conflict between nodes, simpler scheduling
 - [Phase 03]: mDNS sidecar approach abandoned after 3 failed fix attempts; Pi-hole custom.list ConfigMap serves jellyfin.local and pihole.local to all LAN devices
+- [Phase 04-makefile-cleanup]: Remove make deploy entirely (not archive) — dead code with k8s/ deleted creates confusion
 
 ### Pending Todos
 
@@ -96,6 +98,6 @@ None — Phase 3 complete. Phase 4 (Makefile Cleanup) ready to begin.
 
 ## Session Continuity
 
-Last session: 2026-03-20T11:25:46.933Z
-Stopped at: Completed 03-02-PLAN.md — Phase 3 fully complete
+Last session: 2026-03-20T12:04:06.688Z
+Stopped at: Completed 04-01-PLAN.md — Phase 4 fully complete
 Resume file: None

@@ -36,9 +36,9 @@
 
 ### Makefile Cleanup
 
-- [ ] **MAKE-01**: `make deploy` target is removed — Flux is the sole deploy path
-- [ ] **MAKE-02**: `make flux-status` (or similar) added for checking reconciliation state
-- [ ] **MAKE-03**: CLAUDE.md updated — diagnostic commands reference `flux get` instead of `kubectl apply`
+- [x] **MAKE-01**: `make deploy` target is removed — Flux is the sole deploy path
+- [x] **MAKE-02**: `make flux-status` (or similar) added for checking reconciliation state
+- [x] **MAKE-03**: CLAUDE.md updated — diagnostic commands reference `flux get` instead of `kubectl apply`
 
 ## v2 Requirements
 
@@ -85,9 +85,9 @@
 | MIG-02 | Phase 3 | Complete |
 | MIG-03 | Phase 3 | Complete |
 | MIG-04 | Phase 3 | Complete |
-| MAKE-01 | Phase 4 | Pending |
-| MAKE-02 | Phase 4 | Pending |
-| MAKE-03 | Phase 4 | Pending |
+| MAKE-01 | Phase 4 | Complete |
+| MAKE-02 | Phase 4 | Complete |
+| MAKE-03 | Phase 4 | Complete |
 
 **Coverage:**
 - v1 requirements: 20 total
