@@ -10,7 +10,7 @@ KUBECTL := kubectl --kubeconfig $(KUBECONFIG)
 FLUX_APP_ID          := 3139498
 FLUX_INSTALLATION_ID := 117733406
 
-.PHONY: help generate setup install-k3s deploy status logs bootstrap-flux flux-status flux-reconcile
+.PHONY: help generate setup install-k3s status logs bootstrap-flux flux-status flux-reconcile
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-20s\033[0m %s\n", $$1, $$2}'
@@ -27,11 +27,6 @@ setup: ## Run base OS setup on all nodes (run once after first boot)
 
 install-k3s: ## Install K3s server + agents and fetch kubeconfig
 	$(ANSIBLE) ansible/playbooks/k3s-install.yaml
-
-# ── Day-to-day ───────────────────────────────────────────────────────────────
-
-deploy: ## Apply all k8s/ manifests to the cluster (use before Flux is bootstrapped)
-	$(ANSIBLE) ansible/playbooks/deploy.yaml
 
 # ── Flux CD ───────────────────────────────────────────────────────────────────
 
