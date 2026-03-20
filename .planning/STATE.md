@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: unknown
-stopped_at: Completed 03-01-PLAN.md
-last_updated: "2026-03-20T10:14:53.480Z"
+stopped_at: "Checkpoint: Task 3 human-verify — Pi-hole DNS and Jellyfin UI verification pending"
+last_updated: "2026-03-20T10:27:23.241Z"
 progress:
   total_phases: 4
-  completed_phases: 2
+  completed_phases: 3
   total_plans: 7
-  completed_plans: 6
+  completed_plans: 7
 ---
 
 # Project State
@@ -52,6 +52,7 @@ Plan: 1 of 2
 | Phase 02-flux-bootstrap P01 | 2min | 2 tasks | 1 files |
 | Phase 02-flux-bootstrap P02 | ~45min | 2 tasks | 5 files |
 | Phase 03-migration-and-ownership-transfer P01 | 20min | 2 tasks | 2 files |
+| Phase 03-migration-and-ownership-transfer P02 | 9min | 2 tasks | 12 files |
 
 ## Accumulated Context
 
@@ -78,6 +79,9 @@ Recent decisions affecting current work:
 - [Phase 02-flux-bootstrap P02]: gotk-*.yaml committed by bootstrap directly to main — never commit these manually
 - [Phase 03-migration-and-ownership-transfer]: Delete-then-reconcile is the correct Flux ownership transfer approach: delete kubectl resources (preserve PVC), delete stale Helm release Secret, then flux reconcile helmrelease
 - [Phase 03-migration-and-ownership-transfer]: pihole-dns LoadBalancer Service exists on cluster — Plan 02 must absorb it into the Pi-hole chart or explicitly delete before reconcile
+- [Phase 03-migration-and-ownership-transfer]: pihole-dns LoadBalancer Service (klipper svclb) held port 53 on worker nodes blocking hostNetwork DaemonSet — delete service before Pi-hole reconcile
+- [Phase 03-migration-and-ownership-transfer]: upgrade.force: true recovers Flux HelmRelease from terminal retry-limit state; remove flag after READY=True
+- [Phase 03-migration-and-ownership-transfer]: apps-kustomization.yaml Flux Kustomization CRD is dead config — flux-system Kustomization directly manages HelmReleases; prune already active via flux-system
 
 ### Pending Todos
 
@@ -89,6 +93,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-20T10:14:53.478Z
-Stopped at: Completed 03-01-PLAN.md
+Last session: 2026-03-20T10:27:23.239Z
+Stopped at: Checkpoint: Task 3 human-verify — Pi-hole DNS and Jellyfin UI verification pending
 Resume file: None

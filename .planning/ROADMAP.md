@@ -14,7 +14,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Helm Charts and Flux Wiring** - Author Jellyfin and Pi-hole Helm charts; write HelmRelease CRDs (completed 2026-03-19)
 - [x] **Phase 2: Flux Bootstrap** - Install Flux controllers on cluster; wire GitRepository to main branch via SSH (completed 2026-03-20)
-- [ ] **Phase 3: Migration and Ownership Transfer** - Hand off live workloads from kubectl to Flux; enable pruning
+- [x] **Phase 3: Migration and Ownership Transfer** - Hand off live workloads from kubectl to Flux; enable pruning (completed 2026-03-20)
 - [ ] **Phase 4: Makefile Cleanup** - Remove imperative deploy path; add flux diagnostics; update docs
 
 ## Phase Details
@@ -85,5 +85,5 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 |-------|----------------|--------|-----------|
 | 1. Helm Charts and Flux Wiring | 3/3 | Complete   | 2026-03-19 |
 | 2. Flux Bootstrap | 2/2 | Complete   | 2026-03-20 |
-| 3. Migration and Ownership Transfer | 1/2 | In Progress|  |
+| 3. Migration and Ownership Transfer | 2/2 | Complete   | 2026-03-20 |
 | 4. Makefile Cleanup | 0/TBD | Not started | - |

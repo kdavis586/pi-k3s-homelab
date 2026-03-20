@@ -30,9 +30,9 @@
 ### Migration
 
 - [x] **MIG-01**: Existing kubectl-applied Jellyfin resources are deleted and recreated under HelmRelease ownership (field manager conflict resolved)
-- [ ] **MIG-02**: Existing kubectl-applied Pi-hole resources are deleted and recreated under HelmRelease ownership
-- [ ] **MIG-03**: `prune: true` re-enabled on the apps Kustomization after Flux owns all workload resources
-- [ ] **MIG-04**: Raw manifests in `k8s/jellyfin/` and `k8s/pihole/` are deleted from the repo
+- [x] **MIG-02**: Existing kubectl-applied Pi-hole resources are deleted and recreated under HelmRelease ownership
+- [x] **MIG-03**: `prune: true` re-enabled on the apps Kustomization after Flux owns all workload resources
+- [x] **MIG-04**: Raw manifests in `k8s/jellyfin/` and `k8s/pihole/` are deleted from the repo
 
 ### Makefile Cleanup
 
@@ -82,9 +82,9 @@
 | FLUX-02 | Phase 1 | Complete |
 | FLUX-03 | Phase 1 | Complete |
 | MIG-01 | Phase 3 | Complete |
-| MIG-02 | Phase 3 | Pending |
-| MIG-03 | Phase 3 | Pending |
-| MIG-04 | Phase 3 | Pending |
+| MIG-02 | Phase 3 | Complete |
+| MIG-03 | Phase 3 | Complete |
+| MIG-04 | Phase 3 | Complete |
 | MAKE-01 | Phase 4 | Pending |
 | MAKE-02 | Phase 4 | Pending |
 | MAKE-03 | Phase 4 | Pending |
