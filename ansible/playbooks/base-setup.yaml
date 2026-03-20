@@ -173,34 +173,18 @@
         daemon_reload: true
 
 
-- name: Publish pihole.local mDNS alias on pihole node
+- name: Clean up legacy avahi-alias-pihole systemd service on pihole node
+  # pihole.local mDNS is now published by the mdns-publisher sidecar in the Pi-hole
+  # Helm chart. The host-level systemd service is no longer needed.
   hosts: pumpkin-pi
   become: true
   tasks:
-    - name: Create avahi alias systemd service for pihole.local
-      ansible.builtin.copy:
-        dest: /etc/systemd/system/avahi-alias-pihole.service
-        mode: "0644"
-        content: |
-          [Unit]
-          Description=mDNS alias pihole.local -> 192.168.1.102
-          After=avahi-daemon.service
-          Requires=avahi-daemon.service
-
-          [Service]
-          Type=simple
-          ExecStart=/usr/bin/avahi-publish --address -R pihole.local 192.168.1.102
-          Restart=on-failure
-
-          [Install]
-          WantedBy=multi-user.target
-
-    - name: Enable and start pihole.local mDNS alias
+    - name: Stop and disable legacy avahi-alias-pihole service if present
       ansible.builtin.systemd:
         name: avahi-alias-pihole
-        enabled: true
-        state: started
-        daemon_reload: true
+        enabled: false
+        state: stopped
+      failed_when: false
 
 - name: Mount USB drive on storage node
   hosts: apple-pi

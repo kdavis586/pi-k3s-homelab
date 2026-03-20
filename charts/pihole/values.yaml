@@ -34,3 +34,7 @@ ingress:
 
 service:
   webPort: 8080
+
+mdns:
+  hostname: pihole.local
+  ip: "192.168.1.102"
