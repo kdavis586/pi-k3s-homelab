@@ -13,7 +13,7 @@ The cluster already runs Jellyfin and Pi-hole via raw Kubernetes manifests deplo
 Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Helm Charts and Flux Wiring** - Author Jellyfin and Pi-hole Helm charts; write HelmRelease CRDs (completed 2026-03-19)
-- [ ] **Phase 2: Flux Bootstrap** - Install Flux controllers on cluster; wire GitRepository to main branch via SSH
+- [x] **Phase 2: Flux Bootstrap** - Install Flux controllers on cluster; wire GitRepository to main branch via SSH (completed 2026-03-20)
 - [ ] **Phase 3: Migration and Ownership Transfer** - Hand off live workloads from kubectl to Flux; enable pruning
 - [ ] **Phase 4: Makefile Cleanup** - Remove imperative deploy path; add flux diagnostics; update docs
 
@@ -45,7 +45,11 @@ Plans:
   2. `flux get sources git -n flux-system` shows the GitRepository for this repo polling main at a 1-minute interval with READY=True
   3. Flux-generated manifests are committed to `flux/flux-system/` in this repo
   4. Jellyfin and Pi-hole continue running after first reconcile (workloads are not deleted — `prune: false` is in effect)
-**Plans**: TBD
+**Plans**: 2/2 plans complete
+
+Plans:
+- [x] 02-01-PLAN.md — Fix bootstrap-flux Makefile target (--path=flux, --version, auth)
+- [x] 02-02-PLAN.md — Run bootstrap, verify controllers, GitRepository, workload survival
 
 ### Phase 3: Migration and Ownership Transfer
 **Goal**: Jellyfin and Pi-hole are fully owned by Flux HelmReleases; no kubectl-applied resources remain; pruning is enabled
@@ -76,6 +80,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Helm Charts and Flux Wiring | 3/3 | Complete   | 2026-03-19 |
-| 2. Flux Bootstrap | 1/2 | In Progress|  |
+| 2. Flux Bootstrap | 2/2 | Complete   | 2026-03-20 |
 | 3. Migration and Ownership Transfer | 0/TBD | Not started | - |
 | 4. Makefile Cleanup | 0/TBD | Not started | - |
