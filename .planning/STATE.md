@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: unknown
-stopped_at: "Checkpoint: Task 3 human-verify — Pi-hole DNS and Jellyfin UI verification pending"
-last_updated: "2026-03-20T10:27:23.241Z"
+stopped_at: Completed 03-02-PLAN.md — Phase 3 fully complete
+last_updated: "2026-03-20T11:25:46.935Z"
 progress:
   total_phases: 4
   completed_phases: 3
@@ -19,12 +19,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-18)
 
 **Core value:** Push to main → cluster converges. No manual deploy steps after initial cluster setup.
-**Current focus:** Phase 03 — migration-and-ownership-transfer
+**Current focus:** Phase 04 — makefile-cleanup
 
 ## Current Position
 
-Phase: 03 (migration-and-ownership-transfer) — EXECUTING
-Plan: 1 of 2
+Phase: 04 (makefile-cleanup) — NOT STARTED
+Plan: 0 of TBD
 
 ## Performance Metrics
 
@@ -53,6 +53,7 @@ Plan: 1 of 2
 | Phase 02-flux-bootstrap P02 | ~45min | 2 tasks | 5 files |
 | Phase 03-migration-and-ownership-transfer P01 | 20min | 2 tasks | 2 files |
 | Phase 03-migration-and-ownership-transfer P02 | 9min | 2 tasks | 12 files |
+| Phase 03 P02 | 60min | 3 tasks | 12 files |
 
 ## Accumulated Context
 
@@ -82,6 +83,8 @@ Recent decisions affecting current work:
 - [Phase 03-migration-and-ownership-transfer]: pihole-dns LoadBalancer Service (klipper svclb) held port 53 on worker nodes blocking hostNetwork DaemonSet — delete service before Pi-hole reconcile
 - [Phase 03-migration-and-ownership-transfer]: upgrade.force: true recovers Flux HelmRelease from terminal retry-limit state; remove flag after READY=True
 - [Phase 03-migration-and-ownership-transfer]: apps-kustomization.yaml Flux Kustomization CRD is dead config — flux-system Kustomization directly manages HelmReleases; prune already active via flux-system
+- [Phase 03]: Pi-hole converted from DaemonSet to Deployment pinned to pumpkin-pi — one pod, avoids port 53 conflict between nodes, simpler scheduling
+- [Phase 03]: mDNS sidecar approach abandoned after 3 failed fix attempts; Pi-hole custom.list ConfigMap serves jellyfin.local and pihole.local to all LAN devices
 
 ### Pending Todos
 
@@ -89,10 +92,10 @@ None yet.
 
 ### Blockers/Concerns
 
-- Phase 3: Pi-hole DaemonSet scheduling requires `workloads=true` node label on target nodes — Pi-hole currently Pending (pre-existing, 3d4h), must apply label before Phase 3 ownership transfer
+None — Phase 3 complete. Phase 4 (Makefile Cleanup) ready to begin.
 
 ## Session Continuity
 
-Last session: 2026-03-20T10:27:23.239Z
-Stopped at: Checkpoint: Task 3 human-verify — Pi-hole DNS and Jellyfin UI verification pending
+Last session: 2026-03-20T11:25:46.933Z
+Stopped at: Completed 03-02-PLAN.md — Phase 3 fully complete
 Resume file: None
