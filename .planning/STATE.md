@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: unknown
-stopped_at: Completed 02-02-PLAN.md
-last_updated: "2026-03-20T09:41:50.704Z"
+stopped_at: Completed 03-01-PLAN.md
+last_updated: "2026-03-20T10:14:53.480Z"
 progress:
   total_phases: 4
   completed_phases: 2
-  total_plans: 5
-  completed_plans: 5
+  total_plans: 7
+  completed_plans: 6
 ---
 
 # Project State
@@ -23,8 +23,8 @@ See: .planning/PROJECT.md (updated 2026-03-18)
 
 ## Current Position
 
-Phase: 02 (flux-bootstrap) — COMPLETE
-Plan: 2 of 2 (complete)
+Phase: 03 (migration-and-ownership-transfer) — EXECUTING
+Plan: 1 of 2
 
 ## Performance Metrics
 
@@ -51,6 +51,7 @@ Plan: 2 of 2 (complete)
 | Phase 01 P03 | 1min | 3 tasks | 4 files |
 | Phase 02-flux-bootstrap P01 | 2min | 2 tasks | 1 files |
 | Phase 02-flux-bootstrap P02 | ~45min | 2 tasks | 5 files |
+| Phase 03-migration-and-ownership-transfer P01 | 20min | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -75,6 +76,8 @@ Recent decisions affecting current work:
 - [Phase 02-flux-bootstrap P02]: Bootstrap uses GitHub App auth (Bitwarden-stored PEM) not GITHUB_TOKEN PAT — no plaintext secrets in environment
 - [Phase 02-flux-bootstrap P02]: Flux installed v2.8.3 (not v2.4.0) — resolved to latest compatible; update flux_version in all.yaml to match
 - [Phase 02-flux-bootstrap P02]: gotk-*.yaml committed by bootstrap directly to main — never commit these manually
+- [Phase 03-migration-and-ownership-transfer]: Delete-then-reconcile is the correct Flux ownership transfer approach: delete kubectl resources (preserve PVC), delete stale Helm release Secret, then flux reconcile helmrelease
+- [Phase 03-migration-and-ownership-transfer]: pihole-dns LoadBalancer Service exists on cluster — Plan 02 must absorb it into the Pi-hole chart or explicitly delete before reconcile
 
 ### Pending Todos
 
@@ -86,6 +89,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-20T09:39:22.135Z
-Stopped at: Completed 02-02-PLAN.md
+Last session: 2026-03-20T10:14:53.478Z
+Stopped at: Completed 03-01-PLAN.md
 Resume file: None
