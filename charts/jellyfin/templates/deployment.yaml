@@ -59,11 +59,11 @@ spec:
           # Publishes jellyfin.local mDNS via the host's avahi-daemon.
           # Mounts the host D-Bus socket so avahi-publish can talk to the avahi-daemon
           # already running on apple-pi (where this pod is pinned).
-          image: alpine:3.21
+          image: debian:bookworm-slim
           command:
             - /bin/sh
             - -c
-            - "apk add --no-cache avahi-tools && exec avahi-publish --address -r {{ .Values.mdns.hostname }} {{ .Values.mdns.ip }}"
+            - "apt-get update -qq && apt-get install -y --no-install-recommends avahi-utils && rm -rf /var/lib/apt/lists/* && exec avahi-publish --address -r {{ .Values.mdns.hostname }} {{ .Values.mdns.ip }}"
           env:
             - name: DBUS_SYSTEM_BUS_ADDRESS
               value: unix:path=/run/dbus/system_bus_socket
