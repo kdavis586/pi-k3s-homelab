@@ -17,4 +17,5 @@ spec:
   install:
     createNamespace: false
   upgrade:
+    force: true
     cleanupOnFail: true
