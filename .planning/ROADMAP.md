@@ -60,7 +60,11 @@ Plans:
   2. Jellyfin is accessible at `http://jellyfin.local` and Pi-hole web UI is accessible after migration — workloads were not interrupted by ownership transfer
   3. `prune: true` is enabled on the apps Kustomization — resources removed from git are removed from the cluster on next reconcile
   4. `k8s/jellyfin/` and `k8s/pihole/` directories no longer exist in the repo
-**Plans**: TBD
+**Plans**: 2 plans
+
+Plans:
+- [ ] 03-01-PLAN.md — Pre-flight assessment and Jellyfin ownership transfer (delete-then-reconcile)
+- [ ] 03-02-PLAN.md — Pi-hole ownership transfer, enable prune, remove raw manifests
 
 ### Phase 4: Makefile Cleanup
 **Goal**: The imperative deploy path is gone; `make` provides only cluster management and diagnostic targets; docs reflect GitOps as the sole deploy path
@@ -81,5 +85,5 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 |-------|----------------|--------|-----------|
 | 1. Helm Charts and Flux Wiring | 3/3 | Complete   | 2026-03-19 |
 | 2. Flux Bootstrap | 2/2 | Complete   | 2026-03-20 |
-| 3. Migration and Ownership Transfer | 0/TBD | Not started | - |
+| 3. Migration and Ownership Transfer | 0/2 | Not started | - |
 | 4. Makefile Cleanup | 0/TBD | Not started | - |
