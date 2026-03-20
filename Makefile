@@ -1,13 +1,14 @@
+SHELL := /bin/bash
+
 -include .make-vars
 
 ANSIBLE := $(shell command -v ansible-playbook 2>/dev/null || echo ~/.local/bin/ansible-playbook) -i ansible/inventory.yaml
 KUBECONFIG := $(HOME)/.kube/config-pi-k3s
 KUBECTL := kubectl --kubeconfig $(KUBECONFIG)
 
-# GitHub App credentials (override via env or .make-vars)
-FLUX_APP_ID        ?=
-FLUX_INSTALLATION_ID ?=
-FLUX_APP_KEY       ?= $(HOME)/.config/flux/github-app.pem
+# GitHub App credentials (PEM retrieved from Bitwarden at runtime)
+FLUX_APP_ID          := 3139498
+FLUX_INSTALLATION_ID := 117733406
 
 .PHONY: help generate setup install-k3s deploy status logs bootstrap-flux flux-status flux-reconcile
 
@@ -34,11 +35,10 @@ deploy: ## Apply all k8s/ manifests to the cluster (use before Flux is bootstrap
 
 # ── Flux CD ───────────────────────────────────────────────────────────────────
 
-bootstrap-flux: ## Bootstrap Flux CD using a GitHub App (set FLUX_APP_ID, FLUX_INSTALLATION_ID, FLUX_APP_KEY)
+bootstrap-flux: ## Bootstrap Flux CD using a GitHub App (requires: bw unlocked, flux CLI)
 	@command -v flux >/dev/null 2>&1 || { echo "Error: flux CLI not found. Run: brew install fluxcd/tap/flux"; exit 1; }
-	@[ -n "$(FLUX_APP_ID)" ] || { echo "Error: FLUX_APP_ID not set. Add to .make-vars or export before running."; exit 1; }
-	@[ -n "$(FLUX_INSTALLATION_ID)" ] || { echo "Error: FLUX_INSTALLATION_ID not set. Add to .make-vars or export before running."; exit 1; }
-	@[ -f "$(FLUX_APP_KEY)" ] || { echo "Error: GitHub App private key not found at $(FLUX_APP_KEY)"; exit 1; }
+	@command -v bw >/dev/null 2>&1 || { echo "Error: bw CLI not found. Install Bitwarden CLI first."; exit 1; }
+	@bw get notes "Github App: Homelab Manager PEM" >/dev/null 2>&1 || { echo "Error: Bitwarden locked or item not found. Run: export BW_SESSION=\$$(bw unlock --raw)"; exit 1; }
 	flux bootstrap github \
 		--owner=kdavis586 \
 		--repository=pi-k3s-homelab \
@@ -46,7 +46,7 @@ bootstrap-flux: ## Bootstrap Flux CD using a GitHub App (set FLUX_APP_ID, FLUX_I
 		--path=flux \
 		--app-id=$(FLUX_APP_ID) \
 		--app-installation-id=$(FLUX_INSTALLATION_ID) \
-		--app-private-key=$(FLUX_APP_KEY) \
+		--app-private-key=<(bw get notes "Github App: Homelab Manager PEM") \
 		--version=v2.4.0 \
 		--kubeconfig=$(KUBECONFIG)
 
