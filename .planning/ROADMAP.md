@@ -74,16 +74,19 @@ Plans:
   1. `make deploy` no longer exists — running it returns an error or is absent from the Makefile
   2. A `make flux-status` (or equivalent) target exists and shows current Flux reconciliation state without requiring direct `kubectl` invocation
   3. CLAUDE.md documents `flux get` commands for diagnostics and does not reference `kubectl apply` for deploying workloads
-**Plans**: TBD
+**Plans**: 1 plan
+
+Plans:
+- [ ] 04-01-PLAN.md — Remove deploy target, delete deploy.yaml, update CLAUDE.md/README.md/SETUP.md for GitOps
 
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 → 2 → 3 → 4
+Phases execute in numeric order: 1 -> 2 -> 3 -> 4
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Helm Charts and Flux Wiring | 3/3 | Complete   | 2026-03-19 |
 | 2. Flux Bootstrap | 2/2 | Complete   | 2026-03-20 |
 | 3. Migration and Ownership Transfer | 2/2 | Complete   | 2026-03-20 |
-| 4. Makefile Cleanup | 0/TBD | Not started | - |
+| 4. Makefile Cleanup | 0/1 | Not started | - |
