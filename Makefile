@@ -4,6 +4,11 @@ ANSIBLE := $(shell command -v ansible-playbook 2>/dev/null || echo ~/.local/bin/
 KUBECONFIG := $(HOME)/.kube/config-pi-k3s
 KUBECTL := kubectl --kubeconfig $(KUBECONFIG)
 
+# GitHub App credentials (override via env or .make-vars)
+FLUX_APP_ID        ?=
+FLUX_INSTALLATION_ID ?=
+FLUX_APP_KEY       ?= $(HOME)/.config/flux/github-app.pem
+
 .PHONY: help generate setup install-k3s deploy status logs bootstrap-flux flux-status flux-reconcile
 
 help: ## Show this help
@@ -29,25 +34,19 @@ deploy: ## Apply all k8s/ manifests to the cluster (use before Flux is bootstrap
 
 # ── Flux CD ───────────────────────────────────────────────────────────────────
 
-generate-flux-key: ## Generate SSH deploy key for Flux (run once, then add public key to GitHub)
-	@mkdir -p $(HOME)/.ssh
-	@ssh-keygen -t ecdsa -b 521 -C "flux-deploy-key" -f $(HOME)/.ssh/flux-deploy-key -N "" -q
-	@echo ""
-	@echo "Deploy key generated. Add this public key to GitHub:"
-	@echo "  https://github.com/kdavis586/pi-k3s-homelab/settings/keys/new"
-	@echo "  Title: flux-deploy-key"
-	@echo "  Allow write access: YES (Flux needs to push bootstrap manifests)"
-	@echo ""
-	@cat $(HOME)/.ssh/flux-deploy-key.pub
-
-bootstrap-flux: ## Bootstrap Flux CD onto the cluster (run make generate-flux-key first, add key to GitHub)
+bootstrap-flux: ## Bootstrap Flux CD using a GitHub App (set FLUX_APP_ID, FLUX_INSTALLATION_ID, FLUX_APP_KEY)
 	@command -v flux >/dev/null 2>&1 || { echo "Error: flux CLI not found. Run: brew install fluxcd/tap/flux"; exit 1; }
-	@[ -f "$(HOME)/.ssh/flux-deploy-key" ] || { echo "Error: SSH deploy key not found. Run: make generate-flux-key"; exit 1; }
-	flux bootstrap git \
-		--url=ssh://git@github.com/kdavis586/pi-k3s-homelab \
+	@[ -n "$(FLUX_APP_ID)" ] || { echo "Error: FLUX_APP_ID not set. Add to .make-vars or export before running."; exit 1; }
+	@[ -n "$(FLUX_INSTALLATION_ID)" ] || { echo "Error: FLUX_INSTALLATION_ID not set. Add to .make-vars or export before running."; exit 1; }
+	@[ -f "$(FLUX_APP_KEY)" ] || { echo "Error: GitHub App private key not found at $(FLUX_APP_KEY)"; exit 1; }
+	flux bootstrap github \
+		--owner=kdavis586 \
+		--repository=pi-k3s-homelab \
 		--branch=main \
 		--path=flux \
-		--private-key-file=$(HOME)/.ssh/flux-deploy-key \
+		--app-id=$(FLUX_APP_ID) \
+		--app-installation-id=$(FLUX_INSTALLATION_ID) \
+		--app-private-key=$(FLUX_APP_KEY) \
 		--version=v2.4.0 \
 		--kubeconfig=$(KUBECONFIG)
 
