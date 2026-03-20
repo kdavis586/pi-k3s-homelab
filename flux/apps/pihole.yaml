@@ -18,3 +18,4 @@ spec:
     createNamespace: false
   upgrade:
     cleanupOnFail: true
+    force: true  # remove after strategy change lands — needed to replace rollingUpdate->Recreate
