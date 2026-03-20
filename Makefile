@@ -38,15 +38,12 @@ deploy: ## Apply all k8s/ manifests to the cluster (use before Flux is bootstrap
 bootstrap-flux: ## Bootstrap Flux CD using a GitHub App (requires: bw unlocked, flux CLI)
 	@command -v flux >/dev/null 2>&1 || { echo "Error: flux CLI not found. Run: brew install fluxcd/tap/flux"; exit 1; }
 	@command -v bw >/dev/null 2>&1 || { echo "Error: bw CLI not found. Install Bitwarden CLI first."; exit 1; }
-	@bw get notes "Github App: Homelab Manager PEM" >/dev/null 2>&1 || { echo "Error: Bitwarden locked or item not found. Run: export BW_SESSION=\$$(bw unlock --raw)"; exit 1; }
+	GITHUB_TOKEN=$$(./scripts/get-github-app-token.sh $(FLUX_APP_ID) $(FLUX_INSTALLATION_ID) "Github App: Homelab Manager PEM") \
 	flux bootstrap github \
 		--owner=kdavis586 \
 		--repository=pi-k3s-homelab \
 		--branch=main \
 		--path=flux \
-		--app-id=$(FLUX_APP_ID) \
-		--app-installation-id=$(FLUX_INSTALLATION_ID) \
-		--app-private-key=<(bw get notes "Github App: Homelab Manager PEM") \
 		--version=v2.4.0 \
 		--kubeconfig=$(KUBECONFIG)
 
