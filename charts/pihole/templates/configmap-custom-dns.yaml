@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: pihole-custom-dns
+  namespace: pihole
+data:
+  custom.list: |
+    {{- range .Values.localDns }}
+    {{ .ip }} {{ .hostname }}
+    {{- end }}

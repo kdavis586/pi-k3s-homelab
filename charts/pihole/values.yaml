@@ -36,6 +36,8 @@ ingress:
 service:
   webPort: 8080
 
-mdns:
-  hostname: pihole.local
-  ip: "192.168.1.102"
+localDns:
+  - hostname: jellyfin.local
+    ip: "192.168.1.101"
+  - hostname: pihole.local
+    ip: "192.168.1.102"

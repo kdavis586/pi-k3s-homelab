@@ -143,33 +143,6 @@
       ansible.builtin.command: netplan apply
       changed_when: true
 
-- name: Clean up legacy avahi-alias-jellyfin systemd service on server node
-  # jellyfin.local mDNS is now published by the mdns-publisher sidecar in the Jellyfin
-  # Helm chart (pointing to apple-pi / 192.168.1.101). The host-level service on
-  # the-bakery pointed to the wrong IP anyway.
-  hosts: servers
-  become: true
-  tasks:
-    - name: Stop and disable legacy avahi-alias-jellyfin service if present
-      ansible.builtin.systemd:
-        name: avahi-alias-jellyfin
-        enabled: false
-        state: stopped
-      failed_when: false
-
-
-- name: Clean up legacy avahi-alias-pihole systemd service on pihole node
-  # pihole.local mDNS is now published by the mdns-publisher sidecar in the Pi-hole
-  # Helm chart. The host-level systemd service is no longer needed.
-  hosts: pumpkin-pi
-  become: true
-  tasks:
-    - name: Stop and disable legacy avahi-alias-pihole service if present
-      ansible.builtin.systemd:
-        name: avahi-alias-pihole
-        enabled: false
-        state: stopped
-      failed_when: false
 
 - name: Mount USB drive on storage node
   hosts: apple-pi

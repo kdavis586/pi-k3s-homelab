@@ -29,10 +29,9 @@ spec:
         kubernetes.io/hostname: {{ .Values.nodeSelector.hostname }}
 
       volumes:
-        - name: dbus-socket
-          hostPath:
-            path: /run/dbus/system_bus_socket
-            type: Socket
+        - name: custom-dns
+          configMap:
+            name: pihole-custom-dns
 
       containers:
         - name: pihole
@@ -60,29 +59,9 @@ spec:
             - containerPort: {{ .Values.service.webPort }}
               name: http
               protocol: TCP
+          volumeMounts:
+            - name: custom-dns
+              mountPath: /etc/pihole/custom.list
+              subPath: custom.list
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
-
-        - name: mdns-publisher
-          # Publishes pihole.local mDNS record via the host's avahi-daemon.
-          # hostNetwork: true (on the pod) means this container is on the host network
-          # namespace. Mounting the host D-Bus socket lets avahi-publish talk to the
-          # avahi-daemon already running on the node.
-          image: debian:bookworm-slim
-          command:
-            - /bin/sh
-            - -c
-            - "apt-get update -qq && apt-get install -y --no-install-recommends avahi-utils && rm -rf /var/lib/apt/lists/* && exec avahi-publish --address -r {{ .Values.mdns.hostname }} {{ .Values.mdns.ip }}"
-          env:
-            - name: DBUS_SYSTEM_BUS_ADDRESS
-              value: unix:path=/run/dbus/system_bus_socket
-          volumeMounts:
-            - name: dbus-socket
-              mountPath: /run/dbus/system_bus_socket
-          resources:
-            requests:
-              memory: 16Mi
-              cpu: 10m
-            limits:
-              memory: 96Mi
-              cpu: 50m
