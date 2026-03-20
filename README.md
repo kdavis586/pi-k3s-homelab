@@ -62,11 +62,12 @@ graph TD
 ### Cluster bring-up
 
 ```bash
-make generate      # Render all Jinja2 templates
-make setup         # Ansible: OS prep, USB mount, avahi mDNS
-make install-k3s   # Ansible: install K3s server then agents
-make deploy        # kubectl apply all k8s manifests
-make status        # Check nodes and pods
+make generate       # Render all Jinja2 templates
+make setup          # Ansible: OS prep, USB mount, avahi mDNS
+make install-k3s    # Ansible: install K3s server then agents
+make bootstrap-flux # Bootstrap Flux CD (one-time, requires bw unlocked)
+make status         # Check nodes and pods
+make flux-status    # Check Flux reconciliation state
 ```
 
 ### SSH access
@@ -90,10 +91,12 @@ ansible/
 cloud-init/
   templates/               ← Jinja2 templates
   *.yaml                   ← generated per-node configs
-k8s/
-  templates/               ← Jinja2 templates
-  jellyfin/                ← generated manifests
-  storage/                 ← local-path-provisioner config
+charts/
+  jellyfin/                ← Jellyfin Helm chart
+  pihole/                  ← Pi-hole Helm chart
+flux/
+  apps/                    ← HelmRelease CRDs
+  flux-system/             ← Flux bootstrap (do not edit)
 Makefile
 CLAUDE.md                  ← AI assistant context
 SETUP.md                   ← End-to-end human setup guide

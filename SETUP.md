@@ -88,10 +88,13 @@ ssh ubuntu@192.168.1.100
 ## Step 5 — Run Ansible
 
 ```bash
-make setup         # OS prep, USB mount on apple-pi, avahi mDNS
-make install-k3s   # Install K3s server then agents
-make deploy        # Apply all k8s manifests
+make setup          # OS prep, USB mount on apple-pi, avahi mDNS
+make install-k3s    # Install K3s server then agents
+make bootstrap-flux # Bootstrap Flux CD (requires bw unlocked + flux CLI)
 ```
+
+After bootstrap, workloads deploy automatically when you push to `main`.
+Run `make flux-status` to check reconciliation state.
 
 Each command is idempotent — safe to re-run.
 

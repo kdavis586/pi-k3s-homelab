@@ -11,12 +11,14 @@ Single source of truth: `ansible/group_vars/all.yaml`
 After any change to that file: `make generate` to propagate to all configs.
 
 ```bash
-make generate     # Render all Jinja2 templates → cloud-init files, inventory, k8s manifests
-make setup        # Ansible: base OS setup + USB mount + avahi (idempotent)
-make install-k3s  # Ansible: install K3s server then agents (idempotent)
-make deploy       # kubectl apply all k8s manifests
-make status       # kubectl get nodes + pods
-make ssh-<name>   # e.g. make ssh-the-bakery, make ssh-apple-pi
+make generate       # Render all Jinja2 templates -> cloud-init files, inventory
+make setup          # Ansible: base OS setup + USB mount + avahi (idempotent)
+make install-k3s    # Ansible: install K3s server then agents (idempotent)
+make bootstrap-flux # Bootstrap Flux CD onto cluster (one-time, requires bw unlocked)
+make status         # kubectl get nodes + pods + svc + pvc
+make flux-status    # Show Flux reconciliation state for all resources
+make flux-reconcile # Force immediate git sync (instead of waiting for 1-min poll)
+make ssh-<name>     # e.g. make ssh-the-bakery, make ssh-apple-pi
 ```
 
 ### CRITICAL: Use make for everything
@@ -28,10 +30,35 @@ The only exceptions are physical setup steps: SD card preparation and physical n
 Everything else goes through `make`.
 
 - Wrong: `kubectl apply -f ...`, `kubectl label ...`, `ansible-playbook ...`
-- Right: encode the change in Ansible/manifests, then run the appropriate `make` command
+- Right: encode the change in Helm charts/values, commit, and push to main
 
 `make setup` can appear to hang in the terminal even after completing — this is a known quirk.
 The `cloud-init status --wait` step uses `timeout 300 ... || true` to avoid blocking indefinitely.
+
+### Deploying workloads (GitOps)
+
+Flux CD watches the `main` branch and reconciles within 60 seconds of a push:
+```bash
+git add charts/jellyfin/  # or whatever changed
+git commit -m "feat: ..."
+git push origin main
+make flux-status          # watch reconciliation
+```
+
+To trigger an immediate sync without waiting for the poll interval:
+```bash
+make flux-reconcile       # force immediate sync
+make flux-status          # confirm READY=True
+```
+
+Diagnostic commands (run directly, these are read-only):
+```bash
+flux get all                  # all Flux resources across namespaces
+flux get kustomizations -A    # Kustomization reconciliation status
+flux get helmreleases -A      # HelmRelease status
+flux get sources git -A       # GitRepository polling status
+flux logs                     # Flux controller event stream
+```
 
 ---
 
@@ -198,7 +225,9 @@ A systemd service on the-bakery publishes `jellyfin.local` → `192.168.1.100` v
 | `ansible/playbooks/base-setup.yaml` | OS prep, USB mount, avahi mDNS |
 | `ansible/playbooks/k3s-install.yaml` | K3s install |
 | `ansible/playbooks/generate-configs.yaml` | Template rendering |
-| `k8s/jellyfin/` | Jellyfin manifests |
-| `k8s/storage/local-path-config.yaml` | Configures local-path-provisioner storage paths |
+| `charts/jellyfin/` | Jellyfin Helm chart (deployed by Flux) |
+| `charts/pihole/` | Pi-hole Helm chart (deployed by Flux) |
+| `flux/apps/` | HelmRelease CRDs for Flux to deploy |
+| `flux/flux-system/` | Flux bootstrap manifests (do not edit manually) |
 | `STATE.md` | Current cluster state and any blockers |
 | `SETUP.md` | Human-readable end-to-end setup guide |
