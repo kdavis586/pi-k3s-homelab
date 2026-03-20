@@ -41,7 +41,6 @@ graph TD
 - **OS**: Ubuntu Server 24.04 LTS (arm64), configured entirely via cloud-init
 - **K8s**: K3s with Traefik ingress + local-path-provisioner
 - **Workloads**: Jellyfin media server, pinned to apple-pi (USB storage node)
-- **mDNS**: avahi-daemon on all nodes; `jellyfin.local` published from the-bakery
 - **File sharing**: Samba on apple-pi; guest access to `/mnt/usb-storage/media` with no password
 
 ## Quick Start
@@ -63,7 +62,7 @@ graph TD
 
 ```bash
 make generate       # Render all Jinja2 templates
-make setup          # Ansible: OS prep, USB mount, avahi mDNS
+make setup          # Ansible: OS prep, USB mount
 make install-k3s    # Ansible: install K3s server then agents
 make bootstrap-flux # Bootstrap Flux CD (one-time, requires bw unlocked)
 make status         # Check nodes and pods
@@ -86,7 +85,7 @@ ansible/
   inventory.yaml           ← generated
   playbooks/
     generate-configs.yaml  ← renders all templates
-    base-setup.yaml        ← OS prep, USB mount, avahi
+    base-setup.yaml        ← OS prep, USB mount
     k3s-install.yaml       ← K3s install
 cloud-init/
   templates/               ← Jinja2 templates
@@ -136,9 +135,6 @@ kubectl --kubeconfig ~/.kube/config-pi-k3s scale deployment jellyfin -n jellyfin
 
 ## Accessing Jellyfin
 
-| Client | URL |
-|--------|-----|
-| Apple (mDNS) | http://jellyfin.local |
-| Android / Windows | http://192.168.1.100 |
+`http://192.168.1.101` — works on all clients (Apple, Android, Windows).
 
 Use `http://` explicitly — browsers may auto-upgrade bare hostnames to HTTPS.
