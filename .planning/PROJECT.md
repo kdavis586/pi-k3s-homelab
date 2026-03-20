@@ -16,15 +16,15 @@ Push to main → cluster converges. No manual deploy steps after initial cluster
 - ✓ Jellyfin deployed with USB storage and local-path PVC — existing
 - ✓ Pi-hole deployed as DaemonSet with mDNS via avahi — existing
 - ✓ Traefik ingress with hostnames for Jellyfin and Pi-hole web UI — existing
+- ✓ Flux CD bootstrapped on cluster, authenticating via SSH deploy key — Validated in Phase 2: flux-bootstrap
+- ✓ Jellyfin and Pi-hole raw manifests converted to Helm charts in `charts/` — Validated in Phase 1: helm-charts-and-flux-wiring
+- ✓ Flux HelmRelease CRDs reference local charts from this repo — Validated in Phase 1: helm-charts-and-flux-wiring
+- ✓ Flux watches `main` branch — pushing to main triggers cluster convergence — Validated in Phase 3: migration-and-ownership-transfer
+- ✓ `make deploy` removed; Flux is the sole deploy path — Validated in Phase 4: makefile-cleanup
 
 ### Active
 
-- [ ] Flux CD bootstrapped on cluster as part of `make install-k3s` flow, authenticating via SSH deploy key
-- [ ] Jellyfin raw manifests converted to a Helm chart in `charts/jellyfin/`
-- [ ] Pi-hole raw manifests converted to a Helm chart in `charts/pihole/`
-- [ ] Flux HelmRelease CRDs reference local charts from this repo
-- [ ] Flux watches `main` branch — pushing to main triggers cluster convergence
-- [ ] `make deploy` removed; Flux is the sole deploy path
+*(All requirements validated — milestone complete)*
 
 ### Out of Scope
 
@@ -52,11 +52,15 @@ Push to main → cluster converges. No manual deploy steps after initial cluster
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
-| Flux in same repo | Simpler — one repo manages infra + cluster state | — Pending |
-| SSH deploy key for Flux auth | Scoped to this repo, no broad token access | — Pending |
-| Local Helm charts (not OCI registry) | Homelab simplicity, no external registry dependency | — Pending |
-| HelmRelease CRDs via Helm Controller | Flux-native way to manage Helm charts declaratively | — Pending |
-| Remove make deploy | Eliminates dual deploy paths and accidental manual applies | — Pending |
+| Flux in same repo | Simpler — one repo manages infra + cluster state | ✓ Implemented |
+| SSH deploy key for Flux auth | Scoped to this repo, no broad token access | ✓ Implemented |
+| Local Helm charts (not OCI registry) | Homelab simplicity, no external registry dependency | ✓ Implemented |
+| HelmRelease CRDs via Helm Controller | Flux-native way to manage Helm charts declaratively | ✓ Implemented |
+| Remove make deploy | Eliminates dual deploy paths and accidental manual applies | ✓ Implemented in Phase 4 |
+
+## Current State
+
+Phase 4 complete — GitOps migration milestone fully delivered. Push to `main` is now the only way to deploy changes. All four phases complete.
 
 ---
-*Last updated: 2026-03-18 after initialization*
+*Last updated: 2026-03-20 after Phase 4 completion*
