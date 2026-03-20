@@ -35,7 +35,7 @@ agent_nodes:
     node_group: workloads
 
 # ── Flux CD ───────────────────────────────────────────────────────────────────
-flux_version: "v2.4.0"
+flux_version: "v2.8.3"
 github_repo: pi-k3s-homelab
 
 # ── Storage ───────────────────────────────────────────────────────────────────
