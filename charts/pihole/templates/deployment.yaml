@@ -7,6 +7,10 @@ metadata:
     app: pihole
 spec:
   replicas: 1
+  # Recreate required: hostNetwork binds port 53 directly on the host.
+  # Rolling update would leave old pod holding port 53 while new pod tries to bind it.
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       app: pihole
@@ -80,5 +84,5 @@ spec:
               memory: 16Mi
               cpu: 10m
             limits:
-              memory: 32Mi
+              memory: 96Mi
               cpu: 50m

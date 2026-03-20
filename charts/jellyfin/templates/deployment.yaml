@@ -75,7 +75,7 @@ spec:
               memory: 16Mi
               cpu: 10m
             limits:
-              memory: 32Mi
+              memory: 96Mi
               cpu: 50m
 
       volumes:
