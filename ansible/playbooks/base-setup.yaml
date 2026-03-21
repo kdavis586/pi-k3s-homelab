@@ -143,23 +143,6 @@
       ansible.builtin.command: netplan apply
       changed_when: true
 
-- name: Remove legacy avahi alias services
-  hosts: all
-  become: true
-  tasks:
-    - name: Stop and disable avahi-alias-jellyfin if present
-      ansible.builtin.systemd:
-        name: avahi-alias-jellyfin
-        enabled: false
-        state: stopped
-      failed_when: false
-    - name: Stop and disable avahi-alias-pihole if present
-      ansible.builtin.systemd:
-        name: avahi-alias-pihole
-        enabled: false
-        state: stopped
-      failed_when: false
-
 - name: Mount USB drive on storage node
   hosts: apple-pi
   become: true

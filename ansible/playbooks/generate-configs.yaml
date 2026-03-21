@@ -72,11 +72,6 @@
         dest: "{{ playbook_dir }}/../../.make-vars"
 
     # ── k8s manifests ───────────────────────────────────────────────────────
-    - name: Generate Jellyfin deployment
-      ansible.builtin.template:
-        src: "{{ playbook_dir }}/../../k8s/templates/jellyfin-deployment.j2"
-        dest: "{{ playbook_dir }}/../../k8s/jellyfin/deployment.yaml"
-
     - name: Generate local-path-config
       ansible.builtin.template:
         src: "{{ playbook_dir }}/../../k8s/templates/local-path-config.j2"
