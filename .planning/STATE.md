@@ -101,9 +101,10 @@ None — v1.0 milestone complete.
 | # | Description | Date | Commit | Directory |
 |---|-------------|------|--------|-----------|
 | 260321-ik3 | Align project structure and conventions with industry standards for GitOps K3s homelab | 2026-03-21 | 1e5073a | [260321-ik3-align-project-structure-and-conventions-](./quick/260321-ik3-align-project-structure-and-conventions-/) |
+| 260321-iwc | Fix README accuracy: remove mDNS references, correct mermaid diagram IPs, add Initial Setup and Day-to-Day Usage sections | 2026-03-21 | 3038f3a | [260321-iwc-fix-readme-accuracy-remove-mdns-referenc](./quick/260321-iwc-fix-readme-accuracy-remove-mdns-referenc/) |
 
 ## Session Continuity
 
-Last session: 2026-03-20T12:04:06.688Z
-Stopped at: Completed 04-01-PLAN.md — Phase 4 fully complete
+Last session: 2026-03-21T00:05:00Z
+Stopped at: Completed quick task 260321-iwc — README accuracy fixes
 Resume file: None
