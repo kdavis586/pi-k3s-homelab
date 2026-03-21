@@ -212,7 +212,7 @@
         content: |
           # Auto-mount the USB storage drive when it appears (e.g. after hot-plug or reboot).
           # This eliminates the need to manually run 'mount -a' after re-plugging the drive.
-          SUBSYSTEM=="block", KERNEL=="sda1", ACTION=="add", RUN+="/bin/mount -a"
+          SUBSYSTEM=="block", KERNEL=="{{ usb_device | basename }}", ACTION=="add", RUN+="/bin/mount -a"
       notify: Reload udev rules
 
     - name: Install Samba

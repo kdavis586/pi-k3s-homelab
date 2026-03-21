@@ -41,7 +41,7 @@ github_repo: pi-k3s-homelab
 # ── Storage ───────────────────────────────────────────────────────────────────
 # Node where the USB drive is attached and Jellyfin is pinned
 storage_node: apple-pi
-usb_device: /dev/sda1
+usb_device: /dev/sdb1
 usb_fstype: exfat
 usb_mount: /mnt/usb-storage
 
