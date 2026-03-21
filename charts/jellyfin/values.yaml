@@ -16,7 +16,6 @@ resources:
 
 storage:
   configSize: 5Gi
-  storageClassName: local-path
   mediaHostPath: /mnt/usb-storage/media
 
 publishedServerUrl: "http://jellyfin.local"

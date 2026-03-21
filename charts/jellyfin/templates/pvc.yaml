@@ -8,7 +8,8 @@ metadata:
 spec:
   accessModes:
     - ReadWriteOnce
-  storageClassName: {{ .Values.storage.storageClassName }}
+  storageClassName: ""
+  volumeName: jellyfin-config
   resources:
     requests:
       storage: {{ .Values.storage.configSize }}
