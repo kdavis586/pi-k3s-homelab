@@ -18,32 +18,30 @@ A git-driven Kubernetes homelab running on Raspberry Pi 4s. Cluster provisioning
 
 ```mermaid
 graph TD
-    internet((Internet))
-    mac[Mac<br/>WiFi]
-    att[ATT BGW320-500<br/>192.168.1.254<br/>Fiber gateway]
+    devices[Local Devices]
+    att[ATT BGW320-500<br/>192.168.1.254]
     switch[TP-Link TL-SG605P<br/>5-port PoE+ switch]
-    github[GitHub<br/>main branch]
 
-    subgraph cluster[K3s Cluster — Flux CD managed]
-        bakery[the-bakery · .100<br/>K3s control plane<br/>4GB RAM · 32GB SD]
-        apple[apple-pi · .101<br/>K3s agent<br/>8GB RAM · 64GB SD]
-        pumpkin[pumpkin-pi · .102<br/>K3s agent<br/>8GB RAM · 64GB SD]
-        jellyfin[Jellyfin<br/>pinned: apple-pi<br/>jellyfin.local → .101]
-        pihole[Pi-hole<br/>DNS + DHCP<br/>pinned: pumpkin-pi]
-        usb[(128GB USB-C<br/>/mnt/usb-storage)]
+    subgraph cluster[K3s Cluster]
+        bakery[the-bakery · .100<br/>control plane · 4GB]
+        apple[apple-pi · .101<br/>agent · 8GB]
+        pumpkin[pumpkin-pi · .102<br/>agent · 8GB]
     end
 
-    internet --> att
-    mac -->|WiFi| att
+    devices --> att
     att -->|ETH1| switch
-    switch -->|PoE port 1| bakery
-    switch -->|PoE port 2| apple
-    switch -->|PoE port 3| pumpkin
-    apple -.-|USB 3.0| usb
-    jellyfin --> usb
-    mac -.->|DNS queries| pumpkin
-    github -->|GitOps · 60s poll| cluster
+    switch -->|PoE 1| bakery
+    switch -->|PoE 2| apple
+    switch -->|PoE 3| pumpkin
 ```
+
+## Services
+
+| Service | Node | URL |
+|---------|------|-----|
+| Jellyfin | apple-pi (.101) | `http://jellyfin.local` · fallback: `http://192.168.1.101` |
+| Pi-hole | pumpkin-pi (.102) | `http://pihole.local:8080` · fallback: `http://192.168.1.102:8080` |
+| Samba | apple-pi (.101) | `smb://apple-pi.local/media` (macOS) · `\\apple-pi\media` (Windows) |
 
 ## Stack
 
