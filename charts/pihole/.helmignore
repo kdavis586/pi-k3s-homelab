@@ -1,0 +1,6 @@
+# Patterns to ignore when building packages.
+# This supports shell glob matching and negation (prefix with !)
+.git
+.gitignore
+*.swp
+.DS_Store
