@@ -96,6 +96,12 @@ None yet.
 
 None — v1.0 milestone complete.
 
+### Quick Tasks Completed
+
+| # | Description | Date | Commit | Directory |
+|---|-------------|------|--------|-----------|
+| 260321-ik3 | Align project structure and conventions with industry standards for GitOps K3s homelab | 2026-03-21 | 1e5073a | [260321-ik3-align-project-structure-and-conventions-](./quick/260321-ik3-align-project-structure-and-conventions-/) |
+
 ## Session Continuity
 
 Last session: 2026-03-20T12:04:06.688Z
