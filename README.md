@@ -28,8 +28,8 @@ graph TD
         bakery[the-bakery · .100<br/>K3s control plane<br/>4GB RAM · 32GB SD]
         apple[apple-pi · .101<br/>K3s agent<br/>8GB RAM · 64GB SD]
         pumpkin[pumpkin-pi · .102<br/>K3s agent<br/>8GB RAM · 64GB SD]
-        jellyfin[Jellyfin<br/>pinned: apple-pi<br/>jellyfin.local → .100]
-        pihole[Pi-hole<br/>LAN DNS · client devices only]
+        jellyfin[Jellyfin<br/>pinned: apple-pi<br/>jellyfin.local → .101]
+        pihole[Pi-hole<br/>DNS + DHCP<br/>pinned: pumpkin-pi]
         usb[(128GB USB-C<br/>/mnt/usb-storage)]
     end
 
@@ -41,6 +41,7 @@ graph TD
     switch -->|PoE port 3| pumpkin
     apple -.-|USB 3.0| usb
     jellyfin --> usb
+    mac -.->|DNS queries| pumpkin
     github -->|GitOps · 60s poll| cluster
 ```
 
@@ -49,7 +50,7 @@ graph TD
 - **OS**: Ubuntu Server 24.04 LTS (arm64), configured entirely via cloud-init
 - **K8s**: K3s with Traefik ingress + local-path-provisioner
 - **GitOps**: Flux CD — watches `main` branch, reconciles within 60 seconds of a push
-- **Workloads**: Jellyfin (media server, pinned to apple-pi), Pi-hole (LAN DNS for client devices)
+- **Workloads**: Jellyfin (media server, pinned to apple-pi), Pi-hole (LAN DNS + DHCP, pinned to pumpkin-pi)
 - **File sharing**: Samba on apple-pi; guest access to `/mnt/usb-storage/media` with no password
 
 ## Quick Start
@@ -144,9 +145,11 @@ kubectl --kubeconfig ~/.kube/config-pi-k3s scale deployment jellyfin -n jellyfin
 
 ## Accessing Jellyfin
 
+Pi-hole serves DHCP to all LAN clients and assigns itself as their DNS server. Pi-hole's local DNS resolves `jellyfin.local` → `192.168.1.101` (apple-pi). Any device on the LAN using Pi-hole DNS can reach Jellyfin by hostname.
+
 | Client | URL |
 |--------|-----|
-| Apple devices | `http://jellyfin.local` — zero config, resolved via mDNS |
-| Android / Windows | `http://192.168.1.100` |
+| Any device on LAN (Pi-hole DNS) | `http://jellyfin.local` — resolved via Pi-hole local DNS |
+| Device not using Pi-hole DNS | `http://192.168.1.101` — direct IP to apple-pi |
 
 Use `http://` explicitly — browsers may auto-upgrade bare hostnames to HTTPS.
