@@ -14,7 +14,6 @@ spec:
         name: flux-system
         namespace: flux-system
       reconcileStrategy: Revision
-  install:
-    createNamespace: true
+  install: {}
   upgrade:
     cleanupOnFail: true
