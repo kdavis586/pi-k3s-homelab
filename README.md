@@ -22,10 +22,16 @@ graph TD
     mac[Mac<br/>WiFi]
     att[ATT BGW320-500<br/>192.168.1.254<br/>Fiber gateway]
     switch[TP-Link TL-SG605P<br/>5-port PoE+ switch]
-    bakery[the-bakery<br/>192.168.1.100<br/>K3s control plane<br/>4GB RAM · 32GB SD]
-    apple[apple-pi<br/>192.168.1.101<br/>K3s agent · Jellyfin<br/>8GB RAM · 64GB SD]
-    pumpkin[pumpkin-pi<br/>192.168.1.102<br/>K3s agent<br/>8GB RAM · 64GB SD]
-    usb[(128GB Flash Drive<br/>/mnt/usb-storage)]
+    github[GitHub<br/>main branch]
+
+    subgraph cluster[K3s Cluster — Flux CD managed]
+        bakery[the-bakery · .100<br/>K3s control plane<br/>4GB RAM · 32GB SD]
+        apple[apple-pi · .101<br/>K3s agent<br/>8GB RAM · 64GB SD]
+        pumpkin[pumpkin-pi · .102<br/>K3s agent<br/>8GB RAM · 64GB SD]
+        jellyfin[Jellyfin<br/>pinned: apple-pi<br/>jellyfin.local → .100]
+        pihole[Pi-hole<br/>LAN DNS · client devices only]
+        usb[(128GB USB-C<br/>/mnt/usb-storage)]
+    end
 
     internet --> att
     mac -->|WiFi| att
@@ -33,14 +39,17 @@ graph TD
     switch -->|PoE port 1| bakery
     switch -->|PoE port 2| apple
     switch -->|PoE port 3| pumpkin
-    apple -.-|USB 3.0 port| usb
+    apple -.-|USB 3.0| usb
+    jellyfin --> usb
+    github -->|GitOps · 60s poll| cluster
 ```
 
 ## Stack
 
 - **OS**: Ubuntu Server 24.04 LTS (arm64), configured entirely via cloud-init
 - **K8s**: K3s with Traefik ingress + local-path-provisioner
-- **Workloads**: Jellyfin media server, pinned to apple-pi (USB storage node)
+- **GitOps**: Flux CD — watches `main` branch, reconciles within 60 seconds of a push
+- **Workloads**: Jellyfin (media server, pinned to apple-pi), Pi-hole (LAN DNS for client devices)
 - **File sharing**: Samba on apple-pi; guest access to `/mnt/usb-storage/media` with no password
 
 ## Quick Start
@@ -135,6 +144,9 @@ kubectl --kubeconfig ~/.kube/config-pi-k3s scale deployment jellyfin -n jellyfin
 
 ## Accessing Jellyfin
 
-`http://192.168.1.101` — works on all clients (Apple, Android, Windows).
+| Client | URL |
+|--------|-----|
+| Apple devices | `http://jellyfin.local` — zero config, resolved via mDNS |
+| Android / Windows | `http://192.168.1.100` |
 
 Use `http://` explicitly — browsers may auto-upgrade bare hostnames to HTTPS.
