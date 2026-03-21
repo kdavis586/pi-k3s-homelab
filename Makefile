@@ -49,6 +49,12 @@ flux-reconcile: ## Force Flux to re-sync from git immediately
 	flux reconcile source git flux-system --kubeconfig $(KUBECONFIG)
 	flux reconcile kustomization flux-system --kubeconfig $(KUBECONFIG)
 
+flux-retry: ## Retry all HelmReleases, resetting failure counts (use after a failed deploy)
+	@flux get helmreleases -A --kubeconfig $(KUBECONFIG) --no-header | awk '{print $$1, $$2}' | while read ns name; do \
+		echo "Retrying $$ns/$$name..."; \
+		flux reconcile helmrelease $$name -n $$ns --reset --with-source --kubeconfig $(KUBECONFIG); \
+	done
+
 status: ## Show node and pod status
 	$(KUBECTL) get nodes,pods,svc,pvc -A
 
