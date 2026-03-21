@@ -3,6 +3,8 @@ kind: PersistentVolumeClaim
 metadata:
   name: jellyfin-config
   namespace: jellyfin
+  labels:
+    {{- include "jellyfin.labels" . | nindent 4 }}
 spec:
   accessModes:
     - ReadWriteOnce

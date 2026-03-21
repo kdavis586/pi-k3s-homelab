@@ -3,6 +3,8 @@ kind: ConfigMap
 metadata:
   name: pihole-custom-dns
   namespace: pihole
+  labels:
+    {{- include "pihole.labels" . | nindent 4 }}
 data:
   custom.list: |
     {{- range .Values.localDns }}

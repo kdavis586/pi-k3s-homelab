@@ -4,7 +4,7 @@ metadata:
   name: pihole
   namespace: pihole
   labels:
-    app: pihole
+    {{- include "pihole.labels" . | nindent 4 }}
 spec:
   replicas: 1
   # Recreate required: hostNetwork binds port 53 directly on the host.
@@ -13,11 +13,11 @@ spec:
     type: Recreate
   selector:
     matchLabels:
-      app: pihole
+      {{- include "pihole.selectorLabels" . | nindent 6 }}
   template:
     metadata:
       labels:
-        app: pihole
+        {{- include "pihole.selectorLabels" . | nindent 8 }}
     spec:
       # hostNetwork required for DHCP — DHCP clients broadcast to 255.255.255.255:67
       # which iptables cannot DNAT (unicast only). Pod must share the host network

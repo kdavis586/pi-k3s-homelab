@@ -4,7 +4,7 @@ metadata:
   name: jellyfin
   namespace: jellyfin
   labels:
-    app: jellyfin
+    {{- include "jellyfin.labels" . | nindent 4 }}
 spec:
   replicas: 1
   # Recreate strategy: Jellyfin cannot run multiple instances sharing the same config volume
@@ -12,11 +12,11 @@ spec:
     type: Recreate
   selector:
     matchLabels:
-      app: jellyfin
+      {{- include "jellyfin.selectorLabels" . | nindent 6 }}
   template:
     metadata:
       labels:
-        app: jellyfin
+        {{- include "jellyfin.selectorLabels" . | nindent 8 }}
     spec:
       # Pin to apple-pi — that's where the USB drive is mounted
       nodeSelector:

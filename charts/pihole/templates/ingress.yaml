@@ -3,6 +3,8 @@ kind: IngressRoute
 metadata:
   name: pihole
   namespace: pihole
+  labels:
+    {{- include "pihole.labels" . | nindent 4 }}
 spec:
   entryPoints:
     - web

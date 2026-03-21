@@ -3,9 +3,11 @@ kind: Service
 metadata:
   name: pihole-web
   namespace: pihole
+  labels:
+    {{- include "pihole.labels" . | nindent 4 }}
 spec:
   selector:
-    app: pihole
+    {{- include "pihole.selectorLabels" . | nindent 4 }}
   type: ClusterIP
   ports:
     - name: http

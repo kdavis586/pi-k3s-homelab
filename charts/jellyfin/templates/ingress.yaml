@@ -3,6 +3,8 @@ kind: IngressRoute
 metadata:
   name: jellyfin
   namespace: jellyfin
+  labels:
+    {{- include "jellyfin.labels" . | nindent 4 }}
 spec:
   entryPoints:
     - web

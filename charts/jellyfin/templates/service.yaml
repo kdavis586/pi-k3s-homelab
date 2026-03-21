@@ -4,10 +4,10 @@ metadata:
   name: jellyfin
   namespace: jellyfin
   labels:
-    app: jellyfin
+    {{- include "jellyfin.labels" . | nindent 4 }}
 spec:
   selector:
-    app: jellyfin
+    {{- include "jellyfin.selectorLabels" . | nindent 4 }}
   ports:
     - name: http
       port: 8096
