@@ -17,7 +17,8 @@ make install-k3s    # Ansible: install K3s server then agents (idempotent)
 make bootstrap-flux # Bootstrap Flux CD onto cluster (one-time, requires bw unlocked)
 make status         # kubectl get nodes + pods + svc + pvc
 make flux-status    # Show Flux reconciliation state for all resources
-make flux-reconcile # Force immediate git sync (instead of waiting for 1-min poll)
+make flux-sync      # Force immediate git sync (instead of waiting for 1-min poll)
+make flux-retry     # Reset failed HelmRelease and retry
 make ssh-<name>     # e.g. make ssh-the-bakery, make ssh-apple-pi
 ```
 
@@ -47,8 +48,13 @@ make flux-status          # watch reconciliation
 
 To trigger an immediate sync without waiting for the poll interval:
 ```bash
-make flux-reconcile       # force immediate sync
+make flux-sync            # force immediate sync
 make flux-status          # confirm READY=True
+```
+
+If a HelmRelease fails and hits max retries:
+```bash
+make flux-retry           # reset failure count and retry all HelmReleases
 ```
 
 Diagnostic commands (run directly, these are read-only):

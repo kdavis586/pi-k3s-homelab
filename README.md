@@ -106,8 +106,9 @@ Edit Helm chart values or templates in `charts/`, commit, and push to `main`. Fl
 git add charts/jellyfin/
 git commit -m "feat: ..."
 git push origin main
-make flux-status        # watch reconciliation (READY=True when done)
-make flux-reconcile     # force immediate sync instead of waiting 60s
+make flux-status    # watch reconciliation (READY=True when done)
+make flux-sync      # skip the 60s poll — pull git and apply immediately
+make flux-retry     # if a HelmRelease fails, reset failure count and retry
 ```
 
 ### Checking cluster health

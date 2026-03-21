@@ -10,7 +10,7 @@ KUBECTL := kubectl --kubeconfig $(KUBECONFIG)
 FLUX_APP_ID          := 3139498
 FLUX_INSTALLATION_ID := 117733406
 
-.PHONY: help generate setup install-k3s status logs bootstrap-flux flux-status flux-reconcile
+.PHONY: help generate setup install-k3s status logs bootstrap-flux flux-status flux-sync flux-retry
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-20s\033[0m %s\n", $$1, $$2}'
@@ -45,7 +45,7 @@ bootstrap-flux: ## Bootstrap Flux CD using a GitHub App (requires: bw unlocked, 
 flux-status: ## Show Flux reconciliation status across all resources
 	flux get all --kubeconfig $(KUBECONFIG)
 
-flux-reconcile: ## Force Flux to re-sync from git immediately
+flux-sync: ## Pull latest git state and apply any new manifests (no-wait for 60s poll)
 	flux reconcile source git flux-system --kubeconfig $(KUBECONFIG)
 	flux reconcile kustomization flux-system --kubeconfig $(KUBECONFIG)
 
