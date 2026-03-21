@@ -53,9 +53,18 @@ graph TD
 - **Workloads**: Jellyfin (media server, pinned to apple-pi), Pi-hole (LAN DNS + DHCP, pinned to pumpkin-pi)
 - **File sharing**: Samba on apple-pi; guest access to `/mnt/usb-storage/media` with no password
 
-## Quick Start
+## Initial Setup
 
-### Initial node setup (one-time)
+One-time steps to bring the cluster up from bare hardware.
+
+### Prerequisites
+
+- Mac with SD card reader
+- Bitwarden CLI (`bw`) installed and unlocked — required for `make bootstrap-flux`
+- `~/.kube` directory exists: `mkdir -p ~/.kube`
+- Router DHCP disabled (or lease range set to non-overlapping range) — Pi-hole takes over DHCP after bootstrap
+
+### SD card preparation (one-time per node)
 
 1. Flash Ubuntu Server 24.04 to each SD card with no OS customization
 2. Run `make generate` to render cloud-init files from templates
@@ -79,6 +88,8 @@ make status         # Check nodes and pods
 make flux-status    # Check Flux reconciliation state
 ```
 
+After `make bootstrap-flux`, Flux automatically deploys Jellyfin and Pi-hole from `charts/` and `flux/apps/` within 60 seconds. Pi-hole DHCP starts assigning IPs and configuring LAN clients to use Pi-hole as their DNS server.
+
 ### SSH access
 
 ```bash
@@ -86,6 +97,40 @@ make ssh-the-bakery
 make ssh-apple-pi
 make ssh-pumpkin-pi
 ```
+
+## Day-to-Day Usage
+
+### Deploying changes
+
+Edit Helm chart values or templates in `charts/`, commit, and push to `main`. Flux reconciles within 60 seconds.
+
+```bash
+git add charts/jellyfin/
+git commit -m "feat: ..."
+git push origin main
+make flux-status        # watch reconciliation (READY=True when done)
+make flux-reconcile     # force immediate sync instead of waiting 60s
+```
+
+### Checking cluster health
+
+```bash
+make status         # nodes, pods, services, PVCs
+make flux-status    # Flux reconciliation state for all resources
+```
+
+### Accessing services
+
+| Service | URL | Notes |
+|---------|-----|-------|
+| Jellyfin | `http://jellyfin.local` | Any device using Pi-hole DNS |
+| Jellyfin (direct) | `http://192.168.1.101` | Fallback if not using Pi-hole DNS |
+| Pi-hole admin | `http://pihole.local:8080` | Any device using Pi-hole DNS |
+| Pi-hole admin (direct) | `http://192.168.1.102:8080` | Fallback direct IP |
+
+### Uploading media
+
+See the [Storage](#storage) section below — Samba share (no password) or rsync.
 
 ## Repo Structure
 
