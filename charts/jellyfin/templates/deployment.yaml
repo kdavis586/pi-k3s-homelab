@@ -22,6 +22,26 @@ spec:
       nodeSelector:
         {{- toYaml .Values.nodeSelector | nindent 8 }}
 
+      # Wait for the USB drive to be mounted on the host before starting Jellyfin.
+      # Without this, a pod restart while the drive is unplugged immediately crashes
+      # and loops in CrashLoopBackOff. With this, the pod waits in Init state until
+      # the drive appears, then starts cleanly.
+      initContainers:
+        - name: wait-for-usb
+          image: busybox
+          command:
+            - sh
+            - -c
+            - |
+              until grep -q /mnt/usb-storage /host-proc/mounts; do
+                echo "Waiting for USB storage to be mounted...";
+                sleep 5;
+              done
+          volumeMounts:
+            - name: host-proc-mounts
+              mountPath: /host-proc/mounts
+              readOnly: true
+
       containers:
         - name: jellyfin
           image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
@@ -63,3 +83,7 @@ spec:
           hostPath:
             path: {{ .Values.storage.mediaHostPath }}
             type: DirectoryOrCreate
+        - name: host-proc-mounts
+          hostPath:
+            path: /proc/mounts
+            type: File

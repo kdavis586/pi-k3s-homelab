@@ -205,6 +205,16 @@
         state: directory
         mode: "0777"
 
+    - name: Add udev rule to auto-mount USB on reconnect
+      ansible.builtin.copy:
+        dest: /etc/udev/rules.d/99-usb-storage-automount.rules
+        mode: "0644"
+        content: |
+          # Auto-mount the USB storage drive when it appears (e.g. after hot-plug or reboot).
+          # This eliminates the need to manually run 'mount -a' after re-plugging the drive.
+          SUBSYSTEM=="block", KERNEL=="sda1", ACTION=="add", RUN+="/bin/mount -a"
+      notify: Reload udev rules
+
     - name: Install Samba
       ansible.builtin.apt:
         name: samba
@@ -258,6 +268,10 @@
         state: started
 
   handlers:
+    - name: Reload udev rules
+      ansible.builtin.command: udevadm control --reload-rules
+      changed_when: true
+
     - name: Restart Samba
       ansible.builtin.systemd:
         name: smbd
