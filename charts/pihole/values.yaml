@@ -20,7 +20,7 @@ env:
   FTLCONF_dhcp_end: "192.168.1.253"
   FTLCONF_dhcp_router: "192.168.1.254"
   FTLCONF_dhcp_leaseTime: "24h"
-  FTLCONF_dhcp_dns: "192.168.1.102,8.8.8.8"
+  FTLCONF_misc_etc_dnsmasq_d: "true"
 
 resources:
   requests:

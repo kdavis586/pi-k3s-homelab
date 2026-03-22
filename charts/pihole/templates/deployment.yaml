@@ -32,6 +32,9 @@ spec:
         - name: custom-dns
           configMap:
             name: pihole-custom-dns
+        - name: dnsmasq-custom
+          configMap:
+            name: pihole-dnsmasq
 
       containers:
         - name: pihole
@@ -63,5 +66,8 @@ spec:
             - name: custom-dns
               mountPath: /etc/pihole/hosts/custom.list
               subPath: custom.list
+            - name: dnsmasq-custom
+              mountPath: /etc/dnsmasq.d/99-custom.conf
+              subPath: 99-custom.conf
           resources:
             {{- toYaml .Values.resources | nindent 12 }}

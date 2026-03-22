@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: pihole-dnsmasq
+  namespace: pihole
+  labels:
+    {{- include "pihole.labels" . | nindent 4 }}
+data:
+  99-custom.conf: |
+    # Advertise Pi-hole as primary DNS with 8.8.8.8 as fallback.
+    # Clients use Pi-hole first; 8.8.8.8 only kicks in if Pi-hole is unreachable.
+    dhcp-option=option:dns-server,{{ .Values.ingress.ip }},8.8.8.8
