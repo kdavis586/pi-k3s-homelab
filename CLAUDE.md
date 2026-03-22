@@ -213,13 +213,15 @@ rsync -av --progress ~/path/to/media/ ubuntu@192.168.1.101:/mnt/usb-storage/medi
 
 ---
 
-## mDNS / Jellyfin access
+## DNS / Jellyfin access
 
-avahi-daemon runs on all nodes for `.local` hostname resolution.
-A systemd service on the-bakery publishes `jellyfin.local` → `192.168.1.100` via mDNS.
+Custom hostnames are served via Pi-hole DNS (not mDNS). `.home` was chosen over `.local`
+because `.local` is reserved for mDNS — macOS and browsers route `.local` via Bonjour
+multicast, bypassing Pi-hole entirely.
 
-- Apple devices: `http://jellyfin.local` — works with zero client configuration
-- Android/Windows: `http://192.168.1.100` directly
+- All clients: `http://jellyfin.home` — requires DHCP lease from Pi-hole
+- Direct IP fallback: `http://192.168.1.101`
+- Pi-hole admin: `http://pihole.home:8080`
 - Always use `http://` prefix explicitly — browsers auto-upgrade bare hostnames to HTTPS
 
 ---

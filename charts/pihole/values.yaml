@@ -31,14 +31,14 @@ resources:
     cpu: 500m
 
 ingress:
-  host: pihole.local
+  host: pihole.home
   ip: "192.168.1.102"
 
 service:
   webPort: 8080
 
 localDns:
-  - hostname: jellyfin.local
+  - hostname: jellyfin.home
     ip: "192.168.1.101"
-  - hostname: pihole.local
+  - hostname: pihole.home
     ip: "192.168.1.102"
