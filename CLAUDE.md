@@ -215,13 +215,14 @@ rsync -av --progress ~/path/to/media/ ubuntu@192.168.1.101:/mnt/usb-storage/medi
 
 ## DNS / Jellyfin access
 
-Custom hostnames are served via Pi-hole DNS (not mDNS). `.home` was chosen over `.local`
-because `.local` is reserved for mDNS — macOS and browsers route `.local` via Bonjour
-multicast, bypassing Pi-hole entirely.
+Custom hostnames are served via Pi-hole DNS (not mDNS). `.internal` was chosen because:
+- `.local` is reserved for mDNS — macOS routes it via Bonjour, bypassing Pi-hole
+- `.home` is intercepted by macOS's mDNSResponder (same problem, different mechanism)
+- `.internal` passes through to the system DNS resolver correctly on all platforms
 
-- All clients: `http://jellyfin.home` — requires DHCP lease from Pi-hole
+- All clients: `http://jellyfin.internal` — requires DHCP lease from Pi-hole
 - Direct IP fallback: `http://192.168.1.101`
-- Pi-hole admin: `http://pihole.home:8080`
+- Pi-hole admin: `http://pihole.internal:8080`
 - Always use `http://` prefix explicitly — browsers auto-upgrade bare hostnames to HTTPS
 
 ---

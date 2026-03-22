@@ -39,8 +39,8 @@ graph TD
 
 | Service | Node | URL |
 |---------|------|-----|
-| Jellyfin | apple-pi (.101) | `http://jellyfin.local` · fallback: `http://192.168.1.101` |
-| Pi-hole | pumpkin-pi (.102) | `http://pihole.local:8080` · fallback: `http://192.168.1.102:8080` |
+| Jellyfin | apple-pi (.101) | `http://jellyfin.internal` · fallback: `http://192.168.1.101` |
+| Pi-hole | pumpkin-pi (.102) | `http://pihole.internal:8080` · fallback: `http://192.168.1.102:8080` |
 | Samba | apple-pi (.101) | `smb://apple-pi.local/media` (macOS) · `\\apple-pi\media` (Windows) |
 
 ## Stack
@@ -122,9 +122,9 @@ make flux-status    # Flux reconciliation state for all resources
 
 | Service | URL | Notes |
 |---------|-----|-------|
-| Jellyfin | `http://jellyfin.local` | Any device using Pi-hole DNS |
+| Jellyfin | `http://jellyfin.internal` | Any device using Pi-hole DNS |
 | Jellyfin (direct) | `http://192.168.1.101` | Fallback if not using Pi-hole DNS |
-| Pi-hole admin | `http://pihole.local:8080` | Any device using Pi-hole DNS |
+| Pi-hole admin | `http://pihole.internal:8080` | Any device using Pi-hole DNS |
 | Pi-hole admin (direct) | `http://192.168.1.102:8080` | Fallback direct IP |
 
 ### Uploading media
@@ -189,11 +189,11 @@ kubectl --kubeconfig ~/.kube/config-pi-k3s scale deployment jellyfin -n jellyfin
 
 ## Accessing Jellyfin
 
-Pi-hole serves DHCP to all LAN clients and assigns itself as their DNS server. Pi-hole's local DNS resolves `jellyfin.local` → `192.168.1.101` (apple-pi). Any device on the LAN using Pi-hole DNS can reach Jellyfin by hostname.
+Pi-hole serves DHCP to all LAN clients and assigns itself as their DNS server. Pi-hole's local DNS resolves `jellyfin.internal` → `192.168.1.101` (apple-pi). Any device on the LAN using Pi-hole DNS can reach Jellyfin by hostname.
 
 | Client | URL |
 |--------|-----|
-| Any device on LAN (Pi-hole DNS) | `http://jellyfin.local` — resolved via Pi-hole local DNS |
+| Any device on LAN (Pi-hole DNS) | `http://jellyfin.internal` — resolved via Pi-hole local DNS |
 | Device not using Pi-hole DNS | `http://192.168.1.101` — direct IP to apple-pi |
 
 Use `http://` explicitly — browsers may auto-upgrade bare hostnames to HTTPS.
