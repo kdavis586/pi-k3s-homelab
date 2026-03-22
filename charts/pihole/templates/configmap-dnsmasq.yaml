@@ -10,3 +10,7 @@ data:
     # Advertise Pi-hole as primary DNS with 8.8.8.8 as fallback.
     # Clients use Pi-hole first; 8.8.8.8 only kicks in if Pi-hole is unreachable.
     dhcp-option=option:dns-server,{{ .Values.ingress.ip }},8.8.8.8
+    # Load custom A records from outside /etc/pihole to avoid Pi-hole v6 symlink issue.
+    # /etc/pihole is a symlink to /var/lib/pihole and FTL's startup script cannot
+    # traverse it correctly when files are volume-mounted into /etc/pihole/hosts/.
+    addn-hosts=/etc/pihole-custom/custom.list

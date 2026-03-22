@@ -64,7 +64,7 @@ spec:
               protocol: TCP
           volumeMounts:
             - name: custom-dns
-              mountPath: /etc/pihole/hosts/custom.list
+              mountPath: /etc/pihole-custom/custom.list
               subPath: custom.list
             - name: dnsmasq-custom
               mountPath: /etc/dnsmasq.d/99-custom.conf
