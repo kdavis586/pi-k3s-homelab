@@ -18,6 +18,9 @@ spec:
     metadata:
       labels:
         {{- include "pihole.selectorLabels" . | nindent 8 }}
+      annotations:
+        checksum/custom-dns: {{ include (print $.Template.BasePath "/configmap-custom-dns.yaml") . | sha256sum }}
+        checksum/dnsmasq: {{ include (print $.Template.BasePath "/configmap-dnsmasq.yaml") . | sha256sum }}
     spec:
       # hostNetwork required for DHCP — DHCP clients broadcast to 255.255.255.255:67
       # which iptables cannot DNAT (unicast only). Pod must share the host network
