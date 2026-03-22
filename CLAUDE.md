@@ -147,9 +147,32 @@ Original spec said "1x 8GB Pi" but actual hardware is 2x 8GB + 1x 4GB:
 
 128GB USB-C flash drive is attached to **apple-pi** at `/dev/sda1` (exFAT), mounted at `/mnt/usb-storage`.
 Jellyfin is pinned to apple-pi via `nodeSelector: kubernetes.io/hostname: apple-pi`.
-Config PVC is provisioned under `/mnt/usb-storage/k8s-volumes` via local-path-provisioner.
+Config data uses a **static PV** pinned to `/mnt/usb-storage/jellyfin-config` (see `charts/jellyfin/templates/pv.yaml`).
 Media files live at `/mnt/usb-storage/media` — mounted directly into the Jellyfin container
 via `hostPath` (not a PVC) so files copied there are immediately visible to Jellyfin.
+
+### Storage pattern: why static PV, not dynamic provisioning
+
+**All stateful workloads must use static PV + hostPath + `persistentVolumeReclaimPolicy: Retain`.
+Do not use dynamic provisioning (local-path-provisioner) for any data you care about.**
+
+Kubernetes dynamic provisioning was designed for cloud storage backends (EBS, GCE PD, Azure Disk)
+where the storage exists as a durable service independent of the cluster. Deleting a PVC triggers
+the cloud provider to remove a cloud volume — but that volume was replicated and snapshotable.
+The PVC → PV → storage API implies that durability guarantee.
+
+`local-path-provisioner` breaks that assumption. Its implementation is `mkdir` on create and
+`rm -rf` on delete. There is no storage service behind it — just a directory on a local disk.
+It was built to make K3s demos work out of the box, not for production data.
+
+This setup makes dynamic provisioning even less appropriate:
+- All stateful workloads are pinned to apple-pi anyway — the "schedule to any node" benefit doesn't apply
+- There is one physical USB drive with no replication or snapshots
+- exFAT provides no filesystem-level durability features
+
+The static PV + hostPath pattern is the honest model: a directory on a disk that Kubernetes
+should treat as precious and never touch. The `k8s-volumes` directory and `local-path-config`
+ConfigMap exist in the repo but are not used — do not introduce workloads that depend on them.
 
 exFAT does not support Unix ownership (`chown`). Permissions are set via mount options:
 `uid=0,gid=0,umask=000` in fstab — do not add `owner`/`group` to Ansible file tasks on this mount.
