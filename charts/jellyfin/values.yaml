@@ -18,10 +18,10 @@ storage:
   configSize: 5Gi
   mediaHostPath: /mnt/usb-storage/media
 
-publishedServerUrl: "http://jellyfin.local"
+publishedServerUrl: "http://jellyfin.home"
 
 ingress:
   hosts:
-    - jellyfin.local
+    - jellyfin.home
     - 192.168.1.101  # apple-pi — where Jellyfin is pinned
 
