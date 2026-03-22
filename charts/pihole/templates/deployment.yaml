@@ -61,7 +61,7 @@ spec:
               protocol: TCP
           volumeMounts:
             - name: custom-dns
-              mountPath: /etc/pihole/custom.list
+              mountPath: /etc/pihole/hosts/custom.list
               subPath: custom.list
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
