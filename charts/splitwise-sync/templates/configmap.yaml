@@ -1,232 +1,459 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: splitwise-sync-script
+  name: splitwise-sync-scripts
   namespace: splitwise-sync
   labels:
     {{- include "splitwise-sync.labels" . | nindent 4 }}
 data:
+  # ------------------------------------------------------------------
+  # sync.py — CronJob: fetch Plaid transactions, write pending.json,
+  # send SMTP review notification. Does NOT post to Splitwise.
+  # ------------------------------------------------------------------
   sync.py: |
     #!/usr/bin/env python3
     """
-    Plaid → Splitwise daily sync.
+    Daily CronJob: pull yesterday's transactions from Plaid, write
+    pending.json to the shared PVC, then send an SMTP notification
+    with a link to the review page.
 
-    For each configured Plaid access token, calls /transactions/sync to fetch
-    yesterday's transactions, then posts a single itemized expense to Splitwise
-    covering all transactions across all accounts.
-
-    Dedup: processed transaction IDs are persisted to /data/processed_ids.txt
-    so re-runs never double-post.
+    The web app (app.py) handles the actual Splitwise submission after
+    the user reviews and selects transactions.
     """
+    import json, os, sys, datetime, smtplib, urllib.request, urllib.error
+    from email.message import EmailMessage
 
-    import json
-    import os
-    import sys
-    import datetime
-    import urllib.request
-    import urllib.error
-
-    # ---------------------------------------------------------------------------
-    # Config from environment (injected via k8s Secret)
-    # ---------------------------------------------------------------------------
-
+    # ── Plaid ──────────────────────────────────────────────────────────
     PLAID_CLIENT_ID = os.environ["PLAID_CLIENT_ID"]
-    PLAID_SECRET = os.environ["PLAID_SECRET"]
-    PLAID_ENV = os.environ.get("PLAID_ENV", "development")  # sandbox | development | production
-
-    SPLITWISE_API_KEY = os.environ["SPLITWISE_API_KEY"]
-    SPLITWISE_GROUP_ID = int(os.environ["SPLITWISE_GROUP_ID"])
-    # Your Splitwise user ID — needed to set the paid_by split correctly.
-    SPLITWISE_USER_ID = int(os.environ["SPLITWISE_USER_ID"])
-
+    PLAID_SECRET    = os.environ["PLAID_SECRET"]
+    PLAID_ENV       = os.environ.get("PLAID_ENV", "development")
     PLAID_BASE = {
-        "sandbox": "https://sandbox.plaid.com",
+        "sandbox":     "https://sandbox.plaid.com",
         "development": "https://development.plaid.com",
-        "production": "https://production.plaid.com",
+        "production":  "https://production.plaid.com",
     }[PLAID_ENV]
 
-    SPLITWISE_BASE = "https://secure.splitwise.com/api/v3.0"
+    # ── SMTP ───────────────────────────────────────────────────────────
+    SMTP_HOST     = os.environ["SMTP_HOST"]
+    SMTP_PORT     = int(os.environ.get("SMTP_PORT", "587"))
+    SMTP_USER     = os.environ["SMTP_USER"]
+    SMTP_PASSWORD = os.environ["SMTP_PASSWORD"]
+    SMTP_FROM     = os.environ["SMTP_FROM"]
+    SMTP_TO       = os.environ["SMTP_TO"]
+    REVIEW_URL    = os.environ["REVIEW_URL"]
 
-    DEDUP_FILE = "/data/processed_ids.txt"
+    # ── Misc ───────────────────────────────────────────────────────────
+    PENDING_FILE = "/data/pending.json"
+    DEDUP_FILE   = "/data/processed_ids.txt"
 
-    EXPENSE_DESCRIPTION = os.environ.get("EXPENSE_DESCRIPTION", "Daily Expenses")
-
-    # Collect all PLAID_ACCESS_TOKEN_N env vars (N = 1, 2, 3, ...)
     ACCESS_TOKENS = []
     n = 1
     while True:
-        token = os.environ.get(f"PLAID_ACCESS_TOKEN_{n}")
-        if token is None:
+        t = os.environ.get(f"PLAID_ACCESS_TOKEN_{n}")
+        if t is None:
             break
-        ACCESS_TOKENS.append(token)
+        ACCESS_TOKENS.append(t)
         n += 1
 
     if not ACCESS_TOKENS:
-        print("ERROR: No PLAID_ACCESS_TOKEN_N environment variables found.", file=sys.stderr)
+        print("ERROR: no PLAID_ACCESS_TOKEN_N vars found.", file=sys.stderr)
         sys.exit(1)
 
-    # ---------------------------------------------------------------------------
-    # Helpers
-    # ---------------------------------------------------------------------------
-
-    def http_post(url: str, payload: dict, headers: dict) -> dict:
-        data = json.dumps(payload).encode()
-        req = urllib.request.Request(url, data=data, headers=headers, method="POST")
+    # ── Helpers ────────────────────────────────────────────────────────
+    def plaid_post(path, body):
+        data = json.dumps(body).encode()
+        req  = urllib.request.Request(
+            f"{PLAID_BASE}{path}", data=data,
+            headers={
+                "Content-Type":    "application/json",
+                "PLAID-CLIENT-ID": PLAID_CLIENT_ID,
+                "PLAID-SECRET":    PLAID_SECRET,
+            },
+            method="POST",
+        )
         try:
-            with urllib.request.urlopen(req) as resp:
-                return json.loads(resp.read())
+            with urllib.request.urlopen(req) as r:
+                return json.loads(r.read())
         except urllib.error.HTTPError as e:
-            body = e.read().decode(errors="replace")
-            print(f"HTTP {e.code} from {url}: {body}", file=sys.stderr)
+            print(f"Plaid HTTP {e.code}: {e.read().decode(errors='replace')}", file=sys.stderr)
             raise
 
-
-    def plaid_post(path: str, body: dict) -> dict:
-        url = f"{PLAID_BASE}{path}"
-        headers = {
-            "Content-Type": "application/json",
-            "PLAID-CLIENT-ID": PLAID_CLIENT_ID,
-            "PLAID-SECRET": PLAID_SECRET,
-        }
-        return http_post(url, body, headers)
-
-
-    def splitwise_post(path: str, body: dict) -> dict:
-        url = f"{SPLITWISE_BASE}{path}"
-        headers = {
-            "Content-Type": "application/json",
-            "Authorization": f"Bearer {SPLITWISE_API_KEY}",
-        }
-        return http_post(url, body, headers)
-
-
-    def load_processed_ids() -> set:
+    def load_processed_ids():
         if not os.path.exists(DEDUP_FILE):
             return set()
         with open(DEDUP_FILE) as f:
-            return {line.strip() for line in f if line.strip()}
+            return {l.strip() for l in f if l.strip()}
 
+    def fetch_yesterday(access_token, yesterday):
+        added, cursor = [], None
+        while True:
+            body = {"access_token": access_token}
+            if cursor:
+                body["cursor"] = cursor
+            resp = plaid_post("/transactions/sync", body)
+            added.extend(resp.get("added", []))
+            cursor = resp.get("next_cursor")
+            if not resp.get("has_more", False):
+                break
+        return [t for t in added if t.get("date") == yesterday]
 
-    def save_processed_ids(ids: set) -> None:
-        os.makedirs(os.path.dirname(DEDUP_FILE), exist_ok=True)
+    def send_email(count, total, date):
+        msg = EmailMessage()
+        msg["Subject"] = f"[splitwise-sync] {count} transaction(s) ready to review — {date}"
+        msg["From"]    = SMTP_FROM
+        msg["To"]      = SMTP_TO
+        msg.set_content(
+            f"{count} transaction(s) totalling ${total:.2f} from {date} are ready for review.\n\n"
+            f"Open the review page:\n{REVIEW_URL}\n"
+        )
+        with smtplib.SMTP(SMTP_HOST, SMTP_PORT) as s:
+            s.starttls()
+            s.login(SMTP_USER, SMTP_PASSWORD)
+            s.send_message(msg)
+        print(f"Notification sent to {SMTP_TO}")
+
+    # ── Main ───────────────────────────────────────────────────────────
+    def main():
+        yesterday  = (datetime.date.today() - datetime.timedelta(days=1)).isoformat()
+        processed  = load_processed_ids()
+
+        print(f"Fetching transactions for {yesterday} across {len(ACCESS_TOKENS)} item(s)...")
+        all_txns = []
+        for i, token in enumerate(ACCESS_TOKENS, 1):
+            print(f"  Item {i}/{len(ACCESS_TOKENS)}...")
+            txns     = fetch_yesterday(token, yesterday)
+            new_txns = [t for t in txns if t["transaction_id"] not in processed]
+            print(f"    {len(txns)} found, {len(new_txns)} new")
+            all_txns.extend(new_txns)
+
+        if not all_txns:
+            print("No new transactions — nothing to do.")
+            return
+
+        total = round(sum(t["amount"] for t in all_txns), 2)
+        print(f"{len(all_txns)} transaction(s), total ${total:.2f}")
+
+        # Write pending.json — web app reads this for the review UI
+        os.makedirs("/data", exist_ok=True)
+        pending = {
+            "date":         yesterday,
+            "generated_at": datetime.datetime.utcnow().isoformat() + "Z",
+            "transactions": [
+                {
+                    "transaction_id": t["transaction_id"],
+                    "name":           t.get("merchant_name") or t.get("name", "Unknown"),
+                    "amount":         t["amount"],
+                    "date":           t["date"],
+                    "account_id":     t.get("account_id", ""),
+                }
+                for t in all_txns
+            ],
+        }
+        with open(PENDING_FILE, "w") as f:
+            json.dump(pending, f, indent=2)
+        print(f"Wrote {PENDING_FILE}")
+
+        send_email(len(all_txns), total, yesterday)
+
+    if __name__ == "__main__":
+        main()
+
+  # ------------------------------------------------------------------
+  # app.py — Deployment: Flask review UI + Splitwise submission.
+  # ------------------------------------------------------------------
+  app.py: |
+    #!/usr/bin/env python3
+    """
+    Flask web app:
+      GET  /  — render review page from pending.json
+      POST /submit — post selected transactions to Splitwise,
+                     mark as processed, clear pending.json
+    """
+    import json, os, datetime, urllib.request, urllib.error
+    from flask import Flask, request, render_template_string
+
+    app = Flask(__name__)
+
+    # ── Config ─────────────────────────────────────────────────────────
+    SPLITWISE_API_KEY = os.environ["SPLITWISE_API_KEY"]
+    SPLITWISE_GROUP_ID = int(os.environ["SPLITWISE_GROUP_ID"])
+    SPLITWISE_USER_ID  = int(os.environ["SPLITWISE_USER_ID"])
+    EXPENSE_DESCRIPTION = os.environ.get("EXPENSE_DESCRIPTION", "Daily Expenses")
+    SPLITWISE_BASE = "https://secure.splitwise.com/api/v3.0"
+
+    PENDING_FILE = "/data/pending.json"
+    DEDUP_FILE   = "/data/processed_ids.txt"
+
+    # ── Helpers ────────────────────────────────────────────────────────
+    def load_pending():
+        if not os.path.exists(PENDING_FILE):
+            return None
+        with open(PENDING_FILE) as f:
+            return json.load(f)
+
+    def load_processed_ids():
+        if not os.path.exists(DEDUP_FILE):
+            return set()
+        with open(DEDUP_FILE) as f:
+            return {l.strip() for l in f if l.strip()}
+
+    def save_processed_ids(ids):
         with open(DEDUP_FILE, "w") as f:
             for tid in sorted(ids):
                 f.write(tid + "\n")
 
-    # ---------------------------------------------------------------------------
-    # Plaid: fetch yesterday's transactions via /transactions/sync
-    # ---------------------------------------------------------------------------
+    def splitwise_post(path, body):
+        data = json.dumps(body).encode()
+        req  = urllib.request.Request(
+            f"{SPLITWISE_BASE}{path}", data=data,
+            headers={
+                "Content-Type":  "application/json",
+                "Authorization": f"Bearer {SPLITWISE_API_KEY}",
+            },
+            method="POST",
+        )
+        try:
+            with urllib.request.urlopen(req) as r:
+                return json.loads(r.read())
+        except urllib.error.HTTPError as e:
+            raise RuntimeError(f"Splitwise HTTP {e.code}: {e.read().decode(errors='replace')}")
 
-    def fetch_yesterday_transactions(access_token: str) -> list:
-        """
-        Pages through /transactions/sync until has_more is False, then filters
-        to transactions dated yesterday.
-        """
-        yesterday = (datetime.date.today() - datetime.timedelta(days=1)).isoformat()
-        all_added = []
-        cursor = None
+    # ── HTML template ──────────────────────────────────────────────────
+    REVIEW_HTML = """<!DOCTYPE html>
+    <html>
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>Splitwise Review</title>
+        <style>
+          *, *::before, *::after { box-sizing: border-box; }
+          body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            font-size: 15px; color: #1a1a1a; background: #f5f5f5;
+            margin: 0; padding: 16px;
+          }
+          .card {
+            background: #fff; border-radius: 10px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+            padding: 24px; max-width: 680px; margin: 0 auto;
+          }
+          h2 { margin: 0 0 4px; font-size: 1.2rem; color: #333; }
+          .subtitle { color: #888; font-size: 0.85rem; margin: 0 0 20px; }
+          .table-wrap { overflow-x: auto; }
+          table { border-collapse: collapse; width: 100%; min-width: 360px; }
+          th {
+            background: #f0f0f0; font-size: 0.75rem; text-transform: uppercase;
+            letter-spacing: 0.05em; color: #666; padding: 10px 12px;
+            text-align: left; border-bottom: 2px solid #ddd;
+          }
+          td { padding: 10px 12px; border-bottom: 1px solid #eee; vertical-align: middle; }
+          tr:last-child td { border-bottom: none; }
+          tr:hover td { background: #fafafa; }
+          input[type="checkbox"] { width: 18px; height: 18px; cursor: pointer; accent-color: #4a90e2; }
+          .split-row {
+            display: flex; align-items: center; gap: 10px; margin: 20px 0;
+          }
+          .split-row label { color: #555; font-size: 0.9rem; }
+          input[type="number"] {
+            width: 72px; padding: 7px 10px; border: 1px solid #ccc;
+            border-radius: 6px; font-size: 0.95rem; text-align: center;
+          }
+          input[type="number"]:focus {
+            outline: none; border-color: #4a90e2;
+            box-shadow: 0 0 0 3px rgba(74,144,226,0.15);
+          }
+          .total-row {
+            font-weight: 600; color: #333; font-size: 0.9rem;
+            margin-bottom: 16px;
+          }
+          button[type="submit"] {
+            background: #4a90e2; color: #fff; border: none; border-radius: 7px;
+            padding: 10px 22px; font-size: 0.95rem; font-weight: 600;
+            cursor: pointer; transition: background 0.15s; width: 100%;
+          }
+          button[type="submit"]:hover { background: #357abd; }
+          button[type="submit"]:disabled { background: #aac7ec; cursor: not-allowed; }
+          #feedback { margin-top: 14px; font-size: 0.9rem; font-weight: 600; min-height: 1.2em; }
+          .success { color: #27ae60; }
+          .error   { color: #c0392b; }
+          .empty   { color: #888; text-align: center; padding: 32px 0; }
+          @media (max-width: 480px) {
+            .card { padding: 16px; border-radius: 0; box-shadow: none; }
+            body  { padding: 0; background: #fff; }
+          }
+        </style>
+      </head>
+      <body>
+        <div class="card">
+          <h2>Splitwise: Review Purchases</h2>
+          {% if error %}
+            <p class="error">{{ error }}</p>
+          {% elif not pending %}
+            <p class="empty">No pending transactions.</p>
+          {% else %}
+            <p class="subtitle">{{ pending.date }}</p>
+            <form id="reviewForm">
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Include</th>
+                      <th>Vendor</th>
+                      <th>Amount</th>
+                      <th>Date</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for txn in pending.transactions %}
+                    <tr>
+                      <td>
+                        <input type="checkbox"
+                          name="txn"
+                          value="{{ txn.transaction_id }}"
+                          data-amount="{{ txn.amount }}"
+                          data-name="{{ txn.name }}"
+                          data-date="{{ txn.date }}"
+                          checked>
+                      </td>
+                      <td>{{ txn.name }}</td>
+                      <td>${{ "%.2f"|format(txn.amount) }}</td>
+                      <td>{{ txn.date }}</td>
+                    </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+              <p class="total-row" id="totalRow">Total: $0.00</p>
+              <div class="split-row">
+                <label for="splitPercent">My share (%):</label>
+                <input type="number" id="splitPercent" name="splitPercent"
+                       value="50" min="0" max="100" step="1">
+              </div>
+              <button type="submit">Submit to Splitwise</button>
+            </form>
+            <div id="feedback"></div>
+          {% endif %}
+        </div>
+        <script>
+          function updateTotal() {
+            var checked = document.querySelectorAll('input[type="checkbox"]:checked');
+            var total = 0;
+            checked.forEach(function(cb) { total += parseFloat(cb.dataset.amount); });
+            document.getElementById('totalRow').textContent =
+              'Total: $' + total.toFixed(2);
+          }
+          document.querySelectorAll('input[type="checkbox"]').forEach(function(cb) {
+            cb.addEventListener('change', updateTotal);
+          });
+          updateTotal();
 
-        while True:
-            body = {
-                "access_token": access_token,
-                "client_id": PLAID_CLIENT_ID,
-                "secret": PLAID_SECRET,
-            }
-            if cursor:
-                body["cursor"] = cursor
+          var form = document.getElementById('reviewForm');
+          if (form) {
+            form.addEventListener('submit', function(e) {
+              e.preventDefault();
+              var btn = form.querySelector('button[type="submit"]');
+              btn.disabled = true;
+              document.getElementById('feedback').textContent = 'Submitting...';
 
-            resp = plaid_post("/transactions/sync", body)
-            all_added.extend(resp.get("added", []))
-            cursor = resp.get("next_cursor")
-            if not resp.get("has_more", False):
-                break
+              var checked = form.querySelectorAll('input[type="checkbox"]:checked');
+              var txns = [];
+              checked.forEach(function(cb) {
+                txns.push({
+                  transaction_id: cb.value,
+                  amount: parseFloat(cb.dataset.amount),
+                  name: cb.dataset.name,
+                  date: cb.dataset.date,
+                });
+              });
 
-        return [t for t in all_added if t.get("date") == yesterday]
+              fetch('/submit', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  transactions: txns,
+                  splitPercent: Number(form.splitPercent.value),
+                }),
+              })
+              .then(function(r) { return r.json(); })
+              .then(function(data) {
+                var fb = document.getElementById('feedback');
+                if (data.ok) {
+                  fb.className = 'success';
+                  fb.textContent = data.message;
+                  Array.from(form.elements).forEach(function(el) { el.disabled = true; });
+                } else {
+                  fb.className = 'error';
+                  fb.textContent = 'Error: ' + data.message;
+                  btn.disabled = false;
+                }
+              })
+              .catch(function(err) {
+                document.getElementById('feedback').className = 'error';
+                document.getElementById('feedback').textContent = 'Unexpected error: ' + err.message;
+                btn.disabled = false;
+              });
+            });
+          }
+        </script>
+      </body>
+    </html>"""
 
+    # ── Routes ─────────────────────────────────────────────────────────
+    @app.route("/")
+    def index():
+        pending = load_pending()
+        return render_template_string(REVIEW_HTML, pending=pending, error=None)
 
-    # ---------------------------------------------------------------------------
-    # Splitwise: post one expense
-    # ---------------------------------------------------------------------------
+    @app.route("/submit", methods=["POST"])
+    def submit():
+        data = request.get_json(force=True)
+        txns = data.get("transactions", [])
+        split_pct = float(data.get("splitPercent", 50))
 
-    def build_expense(transactions: list, description: str) -> dict:
-        """
-        Aggregates a list of Plaid transactions into a single Splitwise expense.
-        The expense description contains an itemized breakdown.
-        Split 50/50 between the two members of the group (adjust as needed).
-        """
-        total = sum(t["amount"] for t in transactions)
-        total = round(total, 2)
+        if not txns:
+            return {"ok": False, "message": "No transactions selected."}
 
-        # Build itemized note
-        lines = []
-        for t in transactions:
-            name = t.get("merchant_name") or t.get("name", "Unknown")
-            amt = t["amount"]
-            lines.append(f"  {name}: ${amt:.2f}")
+        total    = round(sum(t["amount"] for t in txns), 2)
+        my_share = round(total * split_pct / 100, 2)
+        their_share = round(total - my_share, 2)
+
+        date = txns[0].get("date", datetime.date.today().isoformat())
+        lines = [f"  {t['name']}: ${t['amount']:.2f}" for t in txns]
         details = "\n".join(lines)
 
-        # 50/50 split — halves rounded to cents, remainder on first user
-        half = round(total / 2, 2)
-        other_half = round(total - half, 2)
-
-        return {
-            "cost": f"{total:.2f}",
-            "description": description,
-            "details": details,
-            "group_id": SPLITWISE_GROUP_ID,
+        body = {
+            "cost":        f"{total:.2f}",
+            "description": f"{EXPENSE_DESCRIPTION} — {date}",
+            "details":     details,
+            "group_id":    SPLITWISE_GROUP_ID,
             "split_equally": False,
-            "users__0__user_id": SPLITWISE_USER_ID,
-            "users__0__paid_share": f"{total:.2f}",
-            "users__0__owed_share": f"{half:.2f}",
-            # users__1 (the other group member) — owed_share only, paid nothing
-            # Splitwise infers the other member from the group.
-            # If you have more than 2 members, add users__1__user_id explicitly.
-            "users__1__owed_share": f"{other_half:.2f}",
+            "users__0__user_id":   SPLITWISE_USER_ID,
+            "users__0__paid_share":  f"{total:.2f}",
+            "users__0__owed_share":  f"{my_share:.2f}",
+            "users__1__owed_share":  f"{their_share:.2f}",
         }
 
-
-    # ---------------------------------------------------------------------------
-    # Main
-    # ---------------------------------------------------------------------------
-
-    def main() -> None:
-        processed = load_processed_ids()
-        yesterday = (datetime.date.today() - datetime.timedelta(days=1)).isoformat()
-        print(f"Fetching transactions for {yesterday} across {len(ACCESS_TOKENS)} item(s)...")
-
-        all_transactions = []
-        for i, token in enumerate(ACCESS_TOKENS, start=1):
-            print(f"  Item {i}/{len(ACCESS_TOKENS)}: fetching...")
-            txns = fetch_yesterday_transactions(token)
-            # Filter out already-processed IDs
-            new_txns = [t for t in txns if t["transaction_id"] not in processed]
-            print(f"    {len(txns)} transaction(s) found, {len(new_txns)} new")
-            all_transactions.extend(new_txns)
-
-        if not all_transactions:
-            print("No new transactions to post.")
-            return
-
-        total = sum(t["amount"] for t in all_transactions)
-        print(f"Posting {len(all_transactions)} transaction(s), total ${total:.2f}")
-
-        description = f"{EXPENSE_DESCRIPTION} — {yesterday}"
-        expense_body = build_expense(all_transactions, description)
-        result = splitwise_post("/create_expense", expense_body)
+        try:
+            result = splitwise_post("/create_expense", body)
+        except RuntimeError as e:
+            return {"ok": False, "message": str(e)}
 
         if result.get("errors"):
-            print(f"ERROR from Splitwise: {result['errors']}", file=sys.stderr)
-            sys.exit(1)
+            return {"ok": False, "message": str(result["errors"])}
 
         expense_id = result["expenses"][0]["id"]
-        print(f"Posted Splitwise expense #{expense_id}: ${total:.2f}")
 
-        # Mark all as processed
-        new_ids = {t["transaction_id"] for t in all_transactions}
-        processed.update(new_ids)
+        # Mark as processed + clear pending
+        processed = load_processed_ids()
+        processed.update(t["transaction_id"] for t in txns)
         save_processed_ids(processed)
-        print(f"Saved {len(new_ids)} transaction ID(s) to dedup file.")
+        if os.path.exists(PENDING_FILE):
+            os.remove(PENDING_FILE)
 
+        return {
+            "ok": True,
+            "message": f"Posted expense #{expense_id}: ${total:.2f} ({split_pct:.0f}% / {100-split_pct:.0f}%)",
+        }
 
     if __name__ == "__main__":
-        main()
+        app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))

@@ -18,10 +18,8 @@ spec:
             {{- include "splitwise-sync.labels" . | nindent 12 }}
         spec:
           restartPolicy: OnFailure
-          {{- if .Values.nodeSelector }}
           nodeSelector:
             {{- toYaml .Values.nodeSelector | nindent 12 }}
-          {{- end }}
           containers:
             - name: sync
               image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
@@ -63,35 +61,54 @@ spec:
                       name: splitwise-sync-credentials
                       key: PLAID_ACCESS_TOKEN_3
                       optional: true
-                - name: SPLITWISE_API_KEY
+                - name: SMTP_HOST
                   valueFrom:
                     secretKeyRef:
                       name: splitwise-sync-credentials
-                      key: SPLITWISE_API_KEY
-                - name: SPLITWISE_GROUP_ID
+                      key: SMTP_HOST
+                - name: SMTP_PORT
                   valueFrom:
                     secretKeyRef:
                       name: splitwise-sync-credentials
-                      key: SPLITWISE_GROUP_ID
-                - name: SPLITWISE_USER_ID
+                      key: SMTP_PORT
+                      optional: true
+                - name: SMTP_USER
                   valueFrom:
                     secretKeyRef:
                       name: splitwise-sync-credentials
-                      key: SPLITWISE_USER_ID
-                - name: EXPENSE_DESCRIPTION
-                  value: {{ .Values.expenseDescription | quote }}
+                      key: SMTP_USER
+                - name: SMTP_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: splitwise-sync-credentials
+                      key: SMTP_PASSWORD
+                - name: SMTP_FROM
+                  valueFrom:
+                    secretKeyRef:
+                      name: splitwise-sync-credentials
+                      key: SMTP_FROM
+                - name: SMTP_TO
+                  valueFrom:
+                    secretKeyRef:
+                      name: splitwise-sync-credentials
+                      key: SMTP_TO
+                - name: REVIEW_URL
+                  valueFrom:
+                    secretKeyRef:
+                      name: splitwise-sync-credentials
+                      key: REVIEW_URL
               resources:
                 {{- toYaml .Values.resources | nindent 16 }}
               volumeMounts:
-                - name: script
+                - name: scripts
                   mountPath: /scripts
-                - name: dedup
-                  mountPath: {{ .Values.dedup.mountPath }}
+                - name: data
+                  mountPath: {{ .Values.data.mountPath }}
           volumes:
-            - name: script
+            - name: scripts
               configMap:
-                name: splitwise-sync-script
+                name: splitwise-sync-scripts
                 defaultMode: 0755
-            - name: dedup
+            - name: data
               persistentVolumeClaim:
-                claimName: {{ .Values.dedup.pvcName }}
+                claimName: {{ .Values.data.pvcName }}
