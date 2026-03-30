@@ -1,0 +1,97 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: splitwise-sync
+  namespace: splitwise-sync
+  labels:
+    {{- include "splitwise-sync.labels" . | nindent 4 }}
+spec:
+  schedule: {{ .Values.schedule | quote }}
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            {{- include "splitwise-sync.labels" . | nindent 12 }}
+        spec:
+          restartPolicy: OnFailure
+          {{- if .Values.nodeSelector }}
+          nodeSelector:
+            {{- toYaml .Values.nodeSelector | nindent 12 }}
+          {{- end }}
+          containers:
+            - name: sync
+              image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
+              imagePullPolicy: {{ .Values.image.pullPolicy }}
+              command:
+                - python3
+                - /scripts/sync.py
+              env:
+                - name: PLAID_CLIENT_ID
+                  valueFrom:
+                    secretKeyRef:
+                      name: splitwise-sync-credentials
+                      key: PLAID_CLIENT_ID
+                - name: PLAID_SECRET
+                  valueFrom:
+                    secretKeyRef:
+                      name: splitwise-sync-credentials
+                      key: PLAID_SECRET
+                - name: PLAID_ENV
+                  valueFrom:
+                    secretKeyRef:
+                      name: splitwise-sync-credentials
+                      key: PLAID_ENV
+                      optional: true
+                - name: PLAID_ACCESS_TOKEN_1
+                  valueFrom:
+                    secretKeyRef:
+                      name: splitwise-sync-credentials
+                      key: PLAID_ACCESS_TOKEN_1
+                - name: PLAID_ACCESS_TOKEN_2
+                  valueFrom:
+                    secretKeyRef:
+                      name: splitwise-sync-credentials
+                      key: PLAID_ACCESS_TOKEN_2
+                      optional: true
+                - name: PLAID_ACCESS_TOKEN_3
+                  valueFrom:
+                    secretKeyRef:
+                      name: splitwise-sync-credentials
+                      key: PLAID_ACCESS_TOKEN_3
+                      optional: true
+                - name: SPLITWISE_API_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: splitwise-sync-credentials
+                      key: SPLITWISE_API_KEY
+                - name: SPLITWISE_GROUP_ID
+                  valueFrom:
+                    secretKeyRef:
+                      name: splitwise-sync-credentials
+                      key: SPLITWISE_GROUP_ID
+                - name: SPLITWISE_USER_ID
+                  valueFrom:
+                    secretKeyRef:
+                      name: splitwise-sync-credentials
+                      key: SPLITWISE_USER_ID
+                - name: EXPENSE_DESCRIPTION
+                  value: {{ .Values.expenseDescription | quote }}
+              resources:
+                {{- toYaml .Values.resources | nindent 16 }}
+              volumeMounts:
+                - name: script
+                  mountPath: /scripts
+                - name: dedup
+                  mountPath: {{ .Values.dedup.mountPath }}
+          volumes:
+            - name: script
+              configMap:
+                name: splitwise-sync-script
+                defaultMode: 0755
+            - name: dedup
+              persistentVolumeClaim:
+                claimName: {{ .Values.dedup.pvcName }}

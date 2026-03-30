@@ -1,0 +1,35 @@
+image:
+  repository: python
+  tag: "3.12-slim"
+  pullPolicy: IfNotPresent
+
+# CronJob schedule — daily at 08:00 UTC
+schedule: "0 8 * * *"
+
+# Number of access tokens configured in the secret.
+# One token per financial institution (set this to however many you have).
+plaidItemCount: 3
+
+# Splitwise group to post expenses to.
+# Sourced from the secret; this value is informational only.
+splitwiseGroupId: ""
+
+# Name for the Splitwise expense description prefix.
+expenseDescription: "Daily Expenses"
+
+# PVC for dedup state (processed transaction IDs).
+# Uses static PV + hostPath pattern — create the PV/PVC before deploying.
+dedup:
+  pvcName: splitwise-sync-dedup
+  mountPath: /data
+
+resources:
+  requests:
+    memory: 128Mi
+    cpu: 100m
+  limits:
+    memory: 256Mi
+    cpu: 500m
+
+# Pin to a specific node if needed (leave empty to schedule anywhere).
+nodeSelector: {}
