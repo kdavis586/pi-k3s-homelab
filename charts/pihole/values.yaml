@@ -42,3 +42,5 @@ localDns:
     ip: "192.168.1.101"
   - hostname: pihole.internal
     ip: "192.168.1.102"
+  - hostname: splitwise-sync.internal
+    ip: "192.168.1.101"

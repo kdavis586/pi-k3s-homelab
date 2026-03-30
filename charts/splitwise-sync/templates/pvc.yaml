@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ .Values.data.pvcName }}
+  namespace: splitwise-sync
+  labels:
+    {{- include "splitwise-sync.labels" . | nindent 4 }}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: ""
+  resources:
+    requests:
+      storage: 100Mi
+  volumeName: splitwise-sync-data
