@@ -56,8 +56,10 @@ spec:
               value: "False"
             - name: ACTIVATE_ADMIN_DASHBOARD
               value: "False"
+            # I Hate Money writes this into a Python config file, which needs
+            # Python rather than YAML boolean spelling.
             - name: ALLOW_PUBLIC_PROJECT_CREATION
-              value: {{ .Values.security.allowPublicProjectCreation | quote }}
+              value: {{ if .Values.security.allowPublicProjectCreation }}"True"{{ else }}"False"{{ end }}
             - name: SESSION_COOKIE_SECURE
               value: "False"
             # Traffic is private LAN HTTP; this unique value protects Flask sessions.
