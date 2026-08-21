@@ -1,3 +1,7 @@
+# Set to true to run the application. When false, Flux retains the chart and
+# durable USB-backed data but scales the workload to zero.
+enabled: false
+
 image:
   repository: ihatemoney/ihatemoney
   # v7.2.1 multi-architecture image, pinned by manifest digest.
@@ -24,6 +28,8 @@ storage:
 # This is reachable only on the private LAN through Traefik.
 ingress:
   host: expenses.internal
+  # Direct LAN fallback for clients that are not using Pi-hole DNS.
+  ip: "192.168.1.100"
 
 security:
   # Project creation is intentionally LAN-only. Once the initial project has
