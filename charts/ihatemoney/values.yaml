@@ -1,0 +1,28 @@
+image:
+  repository: ihatemoney/ihatemoney
+  # v7.2.1 multi-architecture image, pinned by manifest digest.
+  digest: sha256:009d1520552782765c8c41750262cc69410be7ac616f93a9f371556e472f23c6
+  pullPolicy: IfNotPresent
+
+nodeSelector:
+  kubernetes.io/hostname: apple-pi
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 256Mi
+
+storage:
+  size: 1Gi
+
+# This is reachable only on the private LAN through Traefik.
+ingress:
+  host: expenses.internal
+
+security:
+  # Project creation is intentionally LAN-only. Once the initial project has
+  # been created, change this to false and configure an administrator secret.
+  allowPublicProjectCreation: true

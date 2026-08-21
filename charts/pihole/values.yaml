@@ -38,6 +38,8 @@ service:
   webPort: 8080
 
 localDns:
+  - hostname: expenses.internal
+    ip: "192.168.1.100"
   - hostname: jellyfin.internal
     ip: "192.168.1.101"
   - hostname: pihole.internal

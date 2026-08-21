@@ -1,0 +1,5 @@
+apiVersion: v2
+name: ihatemoney
+description: Private shared-expense tracker
+version: 0.1.0
+appVersion: "7.2.1"

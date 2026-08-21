@@ -1,0 +1,87 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ihatemoney
+  namespace: ihatemoney
+  labels:
+    {{- include "ihatemoney.labels" . | nindent 4 }}
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      {{- include "ihatemoney.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "ihatemoney.selectorLabels" . | nindent 8 }}
+    spec:
+      automountServiceAccountToken: false
+      nodeSelector:
+        {{- toYaml .Values.nodeSelector | nindent 8 }}
+      initContainers:
+        - name: initialize-data-directory
+          image: busybox:1.37.0
+          command: ["sh", "-c", "mkdir -p /database && chown 1000:1000 /database"]
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+          volumeMounts:
+            - name: data
+              mountPath: /database
+      containers:
+        - name: ihatemoney
+          image: "{{ .Values.image.repository }}@{{ .Values.image.digest }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: 8000
+              protocol: TCP
+          env:
+            - name: DEBUG
+              value: "False"
+            - name: ACTIVATE_DEMO_PROJECT
+              value: "False"
+            - name: ACTIVATE_ADMIN_DASHBOARD
+              value: "False"
+            - name: ALLOW_PUBLIC_PROJECT_CREATION
+              value: {{ .Values.security.allowPublicProjectCreation | quote }}
+            - name: SESSION_COOKIE_SECURE
+              value: "False"
+            # Traffic is private LAN HTTP; this unique value protects Flask sessions.
+            - name: SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: ihatemoney-runtime
+                  key: secret-key
+            - name: PUID
+              value: "1000"
+            - name: PGID
+              value: "1000"
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+            - name: data
+              mountPath: /database
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 20
+            periodSeconds: 20
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: ihatemoney-data
