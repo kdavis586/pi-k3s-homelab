@@ -17,6 +17,9 @@ resources:
 
 storage:
   size: 1Gi
+  # Application data is deliberately stored outside K3s's local-path
+  # provisioner, on the durable USB volume mounted on apple-pi.
+  hostPath: /mnt/usb-storage/ihatemoney
 
 # This is reachable only on the private LAN through Traefik.
 ingress:

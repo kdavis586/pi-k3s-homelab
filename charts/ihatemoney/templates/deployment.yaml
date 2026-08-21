@@ -20,6 +20,27 @@ spec:
       automountServiceAccountToken: false
       nodeSelector:
         {{- toYaml .Values.nodeSelector | nindent 8 }}
+      initContainers:
+        # Prevent a pod from silently writing data to apple-pi's root disk if
+        # the USB volume is unavailable during a reboot or maintenance.
+        - name: wait-for-usb
+          image: busybox:1.37.0
+          command:
+            - sh
+            - -c
+            - |
+              until grep -q ' /mnt/usb-storage ' /host-proc/mounts; do
+                echo "Waiting for USB storage to be mounted..."
+                sleep 5
+              done
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+          volumeMounts:
+            - name: host-proc-mounts
+              mountPath: /host-proc/mounts
+              readOnly: true
       containers:
         - name: ihatemoney
           image: "{{ .Values.image.repository }}@{{ .Values.image.digest }}"
@@ -70,3 +91,7 @@ spec:
         - name: data
           persistentVolumeClaim:
             claimName: ihatemoney-data
+        - name: host-proc-mounts
+          hostPath:
+            path: /proc/mounts
+            type: File
