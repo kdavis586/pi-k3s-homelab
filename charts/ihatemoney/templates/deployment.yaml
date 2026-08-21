@@ -20,17 +20,6 @@ spec:
       automountServiceAccountToken: false
       nodeSelector:
         {{- toYaml .Values.nodeSelector | nindent 8 }}
-      initContainers:
-        - name: initialize-data-directory
-          image: busybox:1.37.0
-          command: ["sh", "-c", "mkdir -p /database && chown 1000:1000 /database"]
-          securityContext:
-            allowPrivilegeEscalation: false
-            capabilities:
-              drop: ["ALL"]
-          volumeMounts:
-            - name: data
-              mountPath: /database
       containers:
         - name: ihatemoney
           image: "{{ .Values.image.repository }}@{{ .Values.image.digest }}"
@@ -56,10 +45,6 @@ spec:
                 secretKeyRef:
                   name: ihatemoney-runtime
                   key: secret-key
-            - name: PUID
-              value: "1000"
-            - name: PGID
-              value: "1000"
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:
