@@ -1,0 +1,18 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: splitwise-sync
+  namespace: flux-system
+spec:
+  interval: 10m
+  targetNamespace: splitwise-sync
+  chart:
+    spec:
+      chart: ./charts/splitwise-sync
+      sourceRef:
+        kind: GitRepository
+        name: flux-system
+        namespace: flux-system
+      reconcileStrategy: Revision
+  upgrade:
+    cleanupOnFail: true

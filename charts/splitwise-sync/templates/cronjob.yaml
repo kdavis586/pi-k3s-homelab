@@ -1,0 +1,114 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: splitwise-sync
+  namespace: splitwise-sync
+  labels:
+    {{- include "splitwise-sync.labels" . | nindent 4 }}
+spec:
+  schedule: {{ .Values.schedule | quote }}
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            {{- include "splitwise-sync.labels" . | nindent 12 }}
+        spec:
+          restartPolicy: OnFailure
+          nodeSelector:
+            {{- toYaml .Values.nodeSelector | nindent 12 }}
+          containers:
+            - name: sync
+              image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
+              imagePullPolicy: {{ .Values.image.pullPolicy }}
+              command:
+                - python3
+                - /scripts/sync.py
+              env:
+                - name: PLAID_CLIENT_ID
+                  valueFrom:
+                    secretKeyRef:
+                      name: splitwise-sync-credentials
+                      key: PLAID_CLIENT_ID
+                - name: PLAID_SECRET
+                  valueFrom:
+                    secretKeyRef:
+                      name: splitwise-sync-credentials
+                      key: PLAID_SECRET
+                - name: PLAID_ENV
+                  valueFrom:
+                    secretKeyRef:
+                      name: splitwise-sync-credentials
+                      key: PLAID_ENV
+                      optional: true
+                - name: PLAID_ACCESS_TOKEN_1
+                  valueFrom:
+                    secretKeyRef:
+                      name: splitwise-sync-credentials
+                      key: PLAID_ACCESS_TOKEN_1
+                - name: PLAID_ACCESS_TOKEN_2
+                  valueFrom:
+                    secretKeyRef:
+                      name: splitwise-sync-credentials
+                      key: PLAID_ACCESS_TOKEN_2
+                      optional: true
+                - name: PLAID_ACCESS_TOKEN_3
+                  valueFrom:
+                    secretKeyRef:
+                      name: splitwise-sync-credentials
+                      key: PLAID_ACCESS_TOKEN_3
+                      optional: true
+                - name: SMTP_HOST
+                  valueFrom:
+                    secretKeyRef:
+                      name: splitwise-sync-credentials
+                      key: SMTP_HOST
+                - name: SMTP_PORT
+                  valueFrom:
+                    secretKeyRef:
+                      name: splitwise-sync-credentials
+                      key: SMTP_PORT
+                      optional: true
+                - name: SMTP_USER
+                  valueFrom:
+                    secretKeyRef:
+                      name: splitwise-sync-credentials
+                      key: SMTP_USER
+                - name: SMTP_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: splitwise-sync-credentials
+                      key: SMTP_PASSWORD
+                - name: SMTP_FROM
+                  valueFrom:
+                    secretKeyRef:
+                      name: splitwise-sync-credentials
+                      key: SMTP_FROM
+                - name: SMTP_TO
+                  valueFrom:
+                    secretKeyRef:
+                      name: splitwise-sync-credentials
+                      key: SMTP_TO
+                - name: REVIEW_URL
+                  valueFrom:
+                    secretKeyRef:
+                      name: splitwise-sync-credentials
+                      key: REVIEW_URL
+              resources:
+                {{- toYaml .Values.resources | nindent 16 }}
+              volumeMounts:
+                - name: scripts
+                  mountPath: /scripts
+                - name: data
+                  mountPath: {{ .Values.data.mountPath }}
+          volumes:
+            - name: scripts
+              configMap:
+                name: splitwise-sync-scripts
+                defaultMode: 0755
+            - name: data
+              persistentVolumeClaim:
+                claimName: {{ .Values.data.pvcName }}

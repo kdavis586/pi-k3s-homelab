@@ -4,3 +4,4 @@ resources:
   - ihatemoney.yaml
   - jellyfin.yaml
   - pihole.yaml
+  - splitwise-sync.yaml

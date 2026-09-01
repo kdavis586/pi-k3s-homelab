@@ -1,0 +1,72 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: splitwise-sync-webapp
+  namespace: splitwise-sync
+  labels:
+    {{- include "splitwise-sync.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.webapp.replicas }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: splitwise-sync-webapp
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: splitwise-sync-webapp
+    spec:
+      nodeSelector:
+        {{- toYaml .Values.nodeSelector | nindent 8 }}
+      containers:
+        - name: webapp
+          image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          # Install Flask on first start; image is cached after that
+          command:
+            - sh
+            - -c
+            - "pip install flask --quiet && python3 /app/app.py"
+          ports:
+            - containerPort: {{ .Values.webapp.port }}
+              name: http
+          env:
+            - name: PORT
+              value: {{ .Values.webapp.port | quote }}
+            - name: SPLITWISE_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: splitwise-sync-credentials
+                  key: SPLITWISE_API_KEY
+            - name: SPLITWISE_GROUP_ID
+              valueFrom:
+                secretKeyRef:
+                  name: splitwise-sync-credentials
+                  key: SPLITWISE_GROUP_ID
+            - name: SPLITWISE_USER_ID
+              valueFrom:
+                secretKeyRef:
+                  name: splitwise-sync-credentials
+                  key: SPLITWISE_USER_ID
+            - name: EXPENSE_DESCRIPTION
+              value: {{ .Values.expenseDescription | quote }}
+          resources:
+            {{- toYaml .Values.webapp.resources | nindent 12 }}
+          volumeMounts:
+            - name: app
+              mountPath: /app
+            - name: data
+              mountPath: {{ .Values.data.mountPath }}
+          readinessProbe:
+            httpGet:
+              path: /
+              port: {{ .Values.webapp.port }}
+            initialDelaySeconds: 15
+            periodSeconds: 10
+      volumes:
+        - name: app
+          configMap:
+            name: splitwise-sync-scripts
+            defaultMode: 0755
+        - name: data
+          persistentVolumeClaim:
+            claimName: {{ .Values.data.pvcName }}
